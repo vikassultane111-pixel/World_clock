@@ -1,1 +1,1069 @@
-aaaa
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { 
+  Moon, Sun, Search, Plus, Trash2, Clock, Calendar, 
+  MapPin, X, Check, Info, Globe, ChevronDown, 
+  Settings, Users, Briefcase, Coffee, MessageCircle,
+  Menu, XCircle, Edit2, UserPlus, ArrowRight, LayoutDashboard,
+  Map, Activity
+} from 'lucide-react';
+
+// Comprehensive database representing countries and major timezones.
+const CITIES = [
+  // A
+  { id: 'af_kbl', city: 'Kabul', country: 'Afghanistan', timezone: 'Asia/Kabul', flag: '🇦🇫', region: 'Asia' },
+  { id: 'al_tia', city: 'Tirana', country: 'Albania', timezone: 'Europe/Tirane', flag: '🇦🇱', region: 'Europe' },
+  { id: 'dz_alg', city: 'Algiers', country: 'Algeria', timezone: 'Africa/Algiers', flag: '🇩🇿', region: 'Africa' },
+  { id: 'ad_alv', city: 'Andorra la Vella', country: 'Andorra', timezone: 'Europe/Andorra', flag: '🇦🇩', region: 'Europe' },
+  { id: 'ao_lad', city: 'Luanda', country: 'Angola', timezone: 'Africa/Luanda', flag: '🇦🇴', region: 'Africa' },
+  { id: 'ar_bue', city: 'Buenos Aires', country: 'Argentina', timezone: 'America/Argentina/Buenos_Aires', flag: '🇦🇷', region: 'Americas' },
+  { id: 'am_evn', city: 'Yerevan', country: 'Armenia', timezone: 'Asia/Yerevan', flag: '🇦🇲', region: 'Asia' },
+  { id: 'au_syd', city: 'Sydney', country: 'Australia', timezone: 'Australia/Sydney', flag: '🇦🇺', region: 'Oceania' },
+  { id: 'at_vie', city: 'Vienna', country: 'Austria', timezone: 'Europe/Vienna', flag: '🇦🇹', region: 'Europe' },
+  { id: 'az_bku', city: 'Baku', country: 'Azerbaijan', timezone: 'Asia/Baku', flag: '🇦🇿', region: 'Asia' },
+  // B
+  { id: 'bs_nas', city: 'Nassau', country: 'Bahamas', timezone: 'America/Nassau', flag: '🇧🇸', region: 'Americas' },
+  { id: 'bh_bah', city: 'Manama', country: 'Bahrain', timezone: 'Asia/Bahrain', flag: '🇧🇭', region: 'Middle East' },
+  { id: 'bd_dha', city: 'Dhaka', country: 'Bangladesh', timezone: 'Asia/Dhaka', flag: '🇧🇩', region: 'Asia' },
+  { id: 'bb_bgi', city: 'Bridgetown', country: 'Barbados', timezone: 'America/Barbados', flag: '🇧🇧', region: 'Americas' },
+  { id: 'by_msq', city: 'Minsk', country: 'Belarus', timezone: 'Europe/Minsk', flag: '🇧🇾', region: 'Europe' },
+  { id: 'be_bru', city: 'Brussels', country: 'Belgium', timezone: 'Europe/Brussels', flag: '🇧🇪', region: 'Europe' },
+  { id: 'bz_bze', city: 'Belmopan', country: 'Belize', timezone: 'America/Belize', flag: '🇧🇿', region: 'Americas' },
+  { id: 'bj_coo', city: 'Porto-Novo', country: 'Benin', timezone: 'Africa/Porto-Novo', flag: '🇧🇯', region: 'Africa' },
+  { id: 'bt_thi', city: 'Thimphu', country: 'Bhutan', timezone: 'Asia/Thimphu', flag: '🇧🇹', region: 'Asia' },
+  { id: 'bo_lpz', city: 'La Paz', country: 'Bolivia', timezone: 'America/La_Paz', flag: '🇧🇴', region: 'Americas' },
+  { id: 'ba_sjj', city: 'Sarajevo', country: 'Bosnia & Herzegovina', timezone: 'Europe/Sarajevo', flag: '🇧🇦', region: 'Europe' },
+  { id: 'bw_gbe', city: 'Gaborone', country: 'Botswana', timezone: 'Africa/Gaborone', flag: '🇧🇼', region: 'Africa' },
+  { id: 'br_sao', city: 'São Paulo', country: 'Brazil', timezone: 'America/Sao_Paulo', flag: '🇧🇷', region: 'Americas' },
+  { id: 'bn_bwn', city: 'B. S. Begawan', country: 'Brunei', timezone: 'Asia/Brunei', flag: '🇧🇳', region: 'Asia' },
+  { id: 'bg_sof', city: 'Sofia', country: 'Bulgaria', timezone: 'Europe/Sofia', flag: '🇧🇬', region: 'Europe' },
+  { id: 'bf_oua', city: 'Ouagadougou', country: 'Burkina Faso', timezone: 'Africa/Ouagadougou', flag: '🇧🇫', region: 'Africa' },
+  { id: 'bi_buj', city: 'Bujumbura', country: 'Burundi', timezone: 'Africa/Bujumbura', flag: '🇧🇮', region: 'Africa' },
+  // C
+  { id: 'kh_pnh', city: 'Phnom Penh', country: 'Cambodia', timezone: 'Asia/Phnom_Penh', flag: '🇰🇭', region: 'Asia' },
+  { id: 'cm_yao', city: 'Yaoundé', country: 'Cameroon', timezone: 'Africa/Douala', flag: '🇨🇲', region: 'Africa' },
+  { id: 'ca_tor', city: 'Toronto', country: 'Canada', timezone: 'America/Toronto', flag: '🇨🇦', region: 'Americas' },
+  { id: 'cv_rai', city: 'Praia', country: 'Cape Verde', timezone: 'Atlantic/Cape_Verde', flag: '🇨🇻', region: 'Africa' },
+  { id: 'cf_bgf', city: 'Bangui', country: 'Central African Rep.', timezone: 'Africa/Bangui', flag: '🇨🇫', region: 'Africa' },
+  { id: 'td_ndj', city: 'N\'Djamena', country: 'Chad', timezone: 'Africa/Ndjamena', flag: '🇹🇩', region: 'Africa' },
+  { id: 'cl_san', city: 'Santiago', country: 'Chile', timezone: 'America/Santiago', flag: '🇨🇱', region: 'Americas' },
+  { id: 'cn_bei', city: 'Beijing', country: 'China', timezone: 'Asia/Shanghai', flag: '🇨🇳', region: 'Asia' },
+  { id: 'co_bog', city: 'Bogotá', country: 'Colombia', timezone: 'America/Bogota', flag: '🇨🇴', region: 'Americas' },
+  { id: 'km_yva', city: 'Moroni', country: 'Comoros', timezone: 'Indian/Comoro', flag: '🇰🇲', region: 'Africa' },
+  { id: 'cg_bzv', city: 'Brazzaville', country: 'Congo', timezone: 'Africa/Brazzaville', flag: '🇨🇬', region: 'Africa' },
+  { id: 'cr_sjo', city: 'San José', country: 'Costa Rica', timezone: 'America/Costa_Rica', flag: '🇨🇷', region: 'Americas' },
+  { id: 'hr_zag', city: 'Zagreb', country: 'Croatia', timezone: 'Europe/Zagreb', flag: '🇭🇷', region: 'Europe' },
+  { id: 'cu_hav', city: 'Havana', country: 'Cuba', timezone: 'America/Havana', flag: '🇨🇺', region: 'Americas' },
+  { id: 'cy_nic', city: 'Nicosia', country: 'Cyprus', timezone: 'Asia/Nicosia', flag: '🇨🇾', region: 'Europe' },
+  { id: 'cz_prg', city: 'Prague', country: 'Czechia', timezone: 'Europe/Prague', flag: '🇨🇿', region: 'Europe' },
+  // D-F
+  { id: 'dk_cph', city: 'Copenhagen', country: 'Denmark', timezone: 'Europe/Copenhagen', flag: '🇩🇰', region: 'Europe' },
+  { id: 'dj_jib', city: 'Djibouti', country: 'Djibouti', timezone: 'Africa/Djibouti', flag: '🇩🇯', region: 'Africa' },
+  { id: 'do_sdq', city: 'Santo Domingo', country: 'Dominican Rep.', timezone: 'America/Santo_Domingo', flag: '🇩🇴', region: 'Americas' },
+  { id: 'ec_uio', city: 'Quito', country: 'Ecuador', timezone: 'America/Guayaquil', flag: '🇪🇨', region: 'Americas' },
+  { id: 'eg_cai', city: 'Cairo', country: 'Egypt', timezone: 'Africa/Cairo', flag: '🇪🇬', region: 'Africa' },
+  { id: 'sv_sal', city: 'San Salvador', country: 'El Salvador', timezone: 'America/El_Salvador', flag: '🇸🇻', region: 'Americas' },
+  { id: 'gq_ssg', city: 'Malabo', country: 'Equatorial Guinea', timezone: 'Africa/Malabo', flag: '🇬🇶', region: 'Africa' },
+  { id: 'er_asm', city: 'Asmara', country: 'Eritrea', timezone: 'Africa/Asmara', flag: '🇪🇷', region: 'Africa' },
+  { id: 'ee_tll', city: 'Tallinn', country: 'Estonia', timezone: 'Europe/Tallinn', flag: '🇪🇪', region: 'Europe' },
+  { id: 'sz_mbq', city: 'Mbabane', country: 'Eswatini', timezone: 'Africa/Mbabane', flag: '🇸🇿', region: 'Africa' },
+  { id: 'et_add', city: 'Addis Ababa', country: 'Ethiopia', timezone: 'Africa/Addis_Ababa', flag: '🇪🇹', region: 'Africa' },
+  { id: 'fj_suv', city: 'Suva', country: 'Fiji', timezone: 'Pacific/Fiji', flag: '🇫🇯', region: 'Oceania' },
+  { id: 'fi_hel', city: 'Helsinki', country: 'Finland', timezone: 'Europe/Helsinki', flag: '🇫🇮', region: 'Europe' },
+  { id: 'fr_par', city: 'Paris', country: 'France', timezone: 'Europe/Paris', flag: '🇫🇷', region: 'Europe' },
+  // G-I
+  { id: 'ga_lbv', city: 'Libreville', country: 'Gabon', timezone: 'Africa/Libreville', flag: '🇬🇦', region: 'Africa' },
+  { id: 'gm_bjl', city: 'Banjul', country: 'Gambia', timezone: 'Africa/Banjul', flag: '🇬🇲', region: 'Africa' },
+  { id: 'ge_tbs', city: 'Tbilisi', country: 'Georgia', timezone: 'Asia/Tbilisi', flag: '🇬🇪', region: 'Asia' },
+  { id: 'de_ber', city: 'Berlin', country: 'Germany', timezone: 'Europe/Berlin', flag: '🇩🇪', region: 'Europe' },
+  { id: 'gh_acc', city: 'Accra', country: 'Ghana', timezone: 'Africa/Accra', flag: '🇬🇭', region: 'Africa' },
+  { id: 'gr_ath', city: 'Athens', country: 'Greece', timezone: 'Europe/Athens', flag: '🇬🇷', region: 'Europe' },
+  { id: 'gt_gua', city: 'Guatemala City', country: 'Guatemala', timezone: 'America/Guatemala', flag: '🇬🇹', region: 'Americas' },
+  { id: 'gn_cky', city: 'Conakry', country: 'Guinea', timezone: 'Africa/Conakry', flag: '🇬🇳', region: 'Africa' },
+  { id: 'gy_geo', city: 'Georgetown', country: 'Guyana', timezone: 'America/Guyana', flag: '🇬🇾', region: 'Americas' },
+  { id: 'ht_pap', city: 'Port-au-Prince', country: 'Haiti', timezone: 'America/Port-au-Prince', flag: '🇭🇹', region: 'Americas' },
+  { id: 'hn_tgu', city: 'Tegucigalpa', country: 'Honduras', timezone: 'America/Tegucigalpa', flag: '🇭🇳', region: 'Americas' },
+  { id: 'hu_bud', city: 'Budapest', country: 'Hungary', timezone: 'Europe/Budapest', flag: '🇭🇺', region: 'Europe' },
+  { id: 'is_rey', city: 'Reykjavik', country: 'Iceland', timezone: 'Atlantic/Reykjavik', flag: '🇮🇸', region: 'Europe' },
+  { id: 'in_del', city: 'New Delhi', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia' },
+  { id: 'id_jak', city: 'Jakarta', country: 'Indonesia', timezone: 'Asia/Jakarta', flag: '🇮🇩', region: 'Asia' },
+  { id: 'ir_thr', city: 'Tehran', country: 'Iran', timezone: 'Asia/Tehran', flag: '🇮🇷', region: 'Middle East' },
+  { id: 'iq_bgw', city: 'Baghdad', country: 'Iraq', timezone: 'Asia/Baghdad', flag: '🇮🇶', region: 'Middle East' },
+  { id: 'ie_dub', city: 'Dublin', country: 'Ireland', timezone: 'Europe/Dublin', flag: '🇮🇪', region: 'Europe' },
+  { id: 'il_tlv', city: 'Tel Aviv', country: 'Israel', timezone: 'Asia/Jerusalem', flag: '🇮🇱', region: 'Middle East' },
+  { id: 'it_rom', city: 'Rome', country: 'Italy', timezone: 'Europe/Rome', flag: '🇮🇹', region: 'Europe' },
+  // J-L
+  { id: 'jm_kin', city: 'Kingston', country: 'Jamaica', timezone: 'America/Jamaica', flag: '🇯🇲', region: 'Americas' },
+  { id: 'jp_tok', city: 'Tokyo', country: 'Japan', timezone: 'Asia/Tokyo', flag: '🇯🇵', region: 'Asia' },
+  { id: 'jo_amm', city: 'Amman', country: 'Jordan', timezone: 'Asia/Amman', flag: '🇯🇴', region: 'Middle East' },
+  { id: 'kz_ala', city: 'Almaty', country: 'Kazakhstan', timezone: 'Asia/Almaty', flag: '🇰🇿', region: 'Asia' },
+  { id: 'ke_nai', city: 'Nairobi', country: 'Kenya', timezone: 'Africa/Nairobi', flag: '🇰🇪', region: 'Africa' },
+  { id: 'ki_trw', city: 'Tarawa', country: 'Kiribati', timezone: 'Pacific/Tarawa', flag: '🇰🇮', region: 'Oceania' },
+  { id: 'kp_fyn', city: 'Pyongyang', country: 'North Korea', timezone: 'Asia/Pyongyang', flag: '🇰🇵', region: 'Asia' },
+  { id: 'kr_seo', city: 'Seoul', country: 'South Korea', timezone: 'Asia/Seoul', flag: '🇰🇷', region: 'Asia' },
+  { id: 'kw_kwi', city: 'Kuwait City', country: 'Kuwait', timezone: 'Asia/Kuwait', flag: '🇰🇼', region: 'Middle East' },
+  { id: 'kg_fru', city: 'Bishkek', country: 'Kyrgyzstan', timezone: 'Asia/Bishkek', flag: '🇰🇬', region: 'Asia' },
+  { id: 'la_vte', city: 'Vientiane', country: 'Laos', timezone: 'Asia/Vientiane', flag: '🇱🇦', region: 'Asia' },
+  { id: 'lv_rix', city: 'Riga', country: 'Latvia', timezone: 'Europe/Riga', flag: '🇱🇻', region: 'Europe' },
+  { id: 'lb_bey', city: 'Beirut', country: 'Lebanon', timezone: 'Asia/Beirut', flag: '🇱🇧', region: 'Middle East' },
+  { id: 'ls_msu', city: 'Maseru', country: 'Lesotho', timezone: 'Africa/Maseru', flag: '🇱🇸', region: 'Africa' },
+  { id: 'lr_mlw', city: 'Monrovia', country: 'Liberia', timezone: 'Africa/Monrovia', flag: '🇱🇷', region: 'Africa' },
+  { id: 'ly_tip', city: 'Tripoli', country: 'Libya', timezone: 'Africa/Tripoli', flag: '🇱🇾', region: 'Africa' },
+  { id: 'li_vad', city: 'Vaduz', country: 'Liechtenstein', timezone: 'Europe/Vaduz', flag: '🇱🇮', region: 'Europe' },
+  { id: 'lt_vno', city: 'Vilnius', country: 'Lithuania', timezone: 'Europe/Vilnius', flag: '🇱🇹', region: 'Europe' },
+  { id: 'lu_lux', city: 'Luxembourg', country: 'Luxembourg', timezone: 'Europe/Luxembourg', flag: '🇱🇺', region: 'Europe' },
+  // M-O
+  { id: 'mg_tnr', city: 'Antananarivo', country: 'Madagascar', timezone: 'Indian/Antananarivo', flag: '🇲🇬', region: 'Africa' },
+  { id: 'mw_llw', city: 'Lilongwe', country: 'Malawi', timezone: 'Africa/Blantyre', flag: '🇲🇼', region: 'Africa' },
+  { id: 'my_kul', city: 'Kuala Lumpur', country: 'Malaysia', timezone: 'Asia/Kuala_Lumpur', flag: '🇲🇾', region: 'Asia' },
+  { id: 'mv_mle', city: 'Malé', country: 'Maldives', timezone: 'Indian/Maldives', flag: '🇲🇻', region: 'Asia' },
+  { id: 'ml_bko', city: 'Bamako', country: 'Mali', timezone: 'Africa/Bamako', flag: '🇲🇱', region: 'Africa' },
+  { id: 'mt_mla', city: 'Valletta', country: 'Malta', timezone: 'Europe/Malta', flag: '🇲🇹', region: 'Europe' },
+  { id: 'mh_maj', city: 'Majuro', country: 'Marshall Islands', timezone: 'Pacific/Majuro', flag: '🇲🇭', region: 'Oceania' },
+  { id: 'mr_nkc', city: 'Nouakchott', country: 'Mauritania', timezone: 'Africa/Nouakchott', flag: '🇲🇷', region: 'Africa' },
+  { id: 'mu_mru', city: 'Port Louis', country: 'Mauritius', timezone: 'Indian/Mauritius', flag: '🇲🇺', region: 'Africa' },
+  { id: 'mx_cdmx', city: 'Mexico City', country: 'Mexico', timezone: 'America/Mexico_City', flag: '🇲🇽', region: 'Americas' },
+  { id: 'md_kiv', city: 'Chișinău', country: 'Moldova', timezone: 'Europe/Chisinau', flag: '🇲🇩', region: 'Europe' },
+  { id: 'mc_mcm', city: 'Monaco', country: 'Monaco', timezone: 'Europe/Monaco', flag: '🇲🇨', region: 'Europe' },
+  { id: 'mn_uln', city: 'Ulaanbaatar', country: 'Mongolia', timezone: 'Asia/Ulaanbaatar', flag: '🇲🇳', region: 'Asia' },
+  { id: 'me_tgd', city: 'Podgorica', country: 'Montenegro', timezone: 'Europe/Podgorica', flag: '🇲🇪', region: 'Europe' },
+  { id: 'ma_cas', city: 'Casablanca', country: 'Morocco', timezone: 'Africa/Casablanca', flag: '🇲🇦', region: 'Africa' },
+  { id: 'mz_mpm', city: 'Maputo', country: 'Mozambique', timezone: 'Africa/Maputo', flag: '🇲🇿', region: 'Africa' },
+  { id: 'mm_rgn', city: 'Yangon', country: 'Myanmar', timezone: 'Asia/Yangon', flag: '🇲🇲', region: 'Asia' },
+  { id: 'na_wdh', city: 'Windhoek', country: 'Namibia', timezone: 'Africa/Windhoek', flag: '🇳🇦', region: 'Africa' },
+  { id: 'np_ktm', city: 'Kathmandu', country: 'Nepal', timezone: 'Asia/Kathmandu', flag: '🇳🇵', region: 'Asia' },
+  { id: 'nl_ams', city: 'Amsterdam', country: 'Netherlands', timezone: 'Europe/Amsterdam', flag: '🇳🇱', region: 'Europe' },
+  { id: 'nz_auc', city: 'Auckland', country: 'New Zealand', timezone: 'Pacific/Auckland', flag: '🇳🇿', region: 'Oceania' },
+  { id: 'ni_mga', city: 'Managua', country: 'Nicaragua', timezone: 'America/Managua', flag: '🇳🇮', region: 'Americas' },
+  { id: 'ne_nim', city: 'Niamey', country: 'Niger', timezone: 'Africa/Niamey', flag: '🇳🇪', region: 'Africa' },
+  { id: 'ng_lag', city: 'Lagos', country: 'Nigeria', timezone: 'Africa/Lagos', flag: '🇳🇬', region: 'Africa' },
+  { id: 'mk_skp', city: 'Skopje', country: 'North Macedonia', timezone: 'Europe/Skopje', flag: '🇲🇰', region: 'Europe' },
+  { id: 'no_osl', city: 'Oslo', country: 'Norway', timezone: 'Europe/Oslo', flag: '🇳🇴', region: 'Europe' },
+  { id: 'om_mct', city: 'Muscat', country: 'Oman', timezone: 'Asia/Muscat', flag: '🇴🇲', region: 'Middle East' },
+  // P-R
+  { id: 'pk_khi', city: 'Karachi', country: 'Pakistan', timezone: 'Asia/Karachi', flag: '🇵🇰', region: 'Asia' },
+  { id: 'pa_pty', city: 'Panama City', country: 'Panama', timezone: 'America/Panama', flag: '🇵🇦', region: 'Americas' },
+  { id: 'pg_pom', city: 'Port Moresby', country: 'Papua New Guinea', timezone: 'Pacific/Port_Moresby', flag: '🇵🇬', region: 'Oceania' },
+  { id: 'py_asu', city: 'Asunción', country: 'Paraguay', timezone: 'America/Asuncion', flag: '🇵🇾', region: 'Americas' },
+  { id: 'pe_lim', city: 'Lima', country: 'Peru', timezone: 'America/Lima', flag: '🇵🇪', region: 'Americas' },
+  { id: 'ph_mnl', city: 'Manila', country: 'Philippines', timezone: 'Asia/Manila', flag: '🇵🇭', region: 'Asia' },
+  { id: 'pl_waw', city: 'Warsaw', country: 'Poland', timezone: 'Europe/Warsaw', flag: '🇵🇱', region: 'Europe' },
+  { id: 'pt_lis', city: 'Lisbon', country: 'Portugal', timezone: 'Europe/Lisbon', flag: '🇵🇹', region: 'Europe' },
+  { id: 'qa_doh', city: 'Doha', country: 'Qatar', timezone: 'Asia/Qatar', flag: '🇶🇦', region: 'Middle East' },
+  { id: 'ro_buh', city: 'Bucharest', country: 'Romania', timezone: 'Europe/Bucharest', flag: '🇷🇴', region: 'Europe' },
+  { id: 'ru_mos', city: 'Moscow', country: 'Russia', timezone: 'Europe/Moscow', flag: '🇷🇺', region: 'Europe' },
+  { id: 'rw_kgl', city: 'Kigali', country: 'Rwanda', timezone: 'Africa/Kigali', flag: '🇷🇼', region: 'Africa' },
+  // S-U
+  { id: 'sa_riy', city: 'Riyadh', country: 'Saudi Arabia', timezone: 'Asia/Riyadh', flag: '🇸🇦', region: 'Middle East' },
+  { id: 'sn_dkr', city: 'Dakar', country: 'Senegal', timezone: 'Africa/Dakar', flag: '🇸🇳', region: 'Africa' },
+  { id: 'rs_beg', city: 'Belgrade', country: 'Serbia', timezone: 'Europe/Belgrade', flag: '🇷🇸', region: 'Europe' },
+  { id: 'sc_sez', city: 'Victoria', country: 'Seychelles', timezone: 'Indian/Mahe', flag: '🇸🇨', region: 'Africa' },
+  { id: 'sl_fna', city: 'Freetown', country: 'Sierra Leone', timezone: 'Africa/Freetown', flag: '🇸🇱', region: 'Africa' },
+  { id: 'sg_sin', city: 'Singapore', country: 'Singapore', timezone: 'Asia/Singapore', flag: '🇸🇬', region: 'Asia' },
+  { id: 'sk_bts', city: 'Bratislava', country: 'Slovakia', timezone: 'Europe/Bratislava', flag: '🇸🇰', region: 'Europe' },
+  { id: 'si_lju', city: 'Ljubljana', country: 'Slovenia', timezone: 'Europe/Ljubljana', flag: '🇸🇮', region: 'Europe' },
+  { id: 'so_mgq', city: 'Mogadishu', country: 'Somalia', timezone: 'Africa/Mogadishu', flag: '🇸🇴', region: 'Africa' },
+  { id: 'za_joh', city: 'Johannesburg', country: 'South Africa', timezone: 'Africa/Johannesburg', flag: '🇿🇦', region: 'Africa' },
+  { id: 'es_mad', city: 'Madrid', country: 'Spain', timezone: 'Europe/Madrid', flag: '🇪🇸', region: 'Europe' },
+  { id: 'lk_cmb', city: 'Colombo', country: 'Sri Lanka', timezone: 'Asia/Colombo', flag: '🇱🇰', region: 'Asia' },
+  { id: 'sd_krt', city: 'Khartoum', country: 'Sudan', timezone: 'Africa/Khartoum', flag: '🇸🇩', region: 'Africa' },
+  { id: 'se_sto', city: 'Stockholm', country: 'Sweden', timezone: 'Europe/Stockholm', flag: '🇸🇪', region: 'Europe' },
+  { id: 'ch_zur', city: 'Zurich', country: 'Switzerland', timezone: 'Europe/Zurich', flag: '🇨🇭', region: 'Europe' },
+  { id: 'sy_dam', city: 'Damascus', country: 'Syria', timezone: 'Asia/Damascus', flag: '🇸🇾', region: 'Middle East' },
+  { id: 'tw_tpe', city: 'Taipei', country: 'Taiwan', timezone: 'Asia/Taipei', flag: '🇹🇼', region: 'Asia' },
+  { id: 'tj_dyu', city: 'Dushanbe', country: 'Tajikistan', timezone: 'Asia/Dushanbe', flag: '🇹🇯', region: 'Asia' },
+  { id: 'tz_dar', city: 'Dar es Salaam', country: 'Tanzania', timezone: 'Africa/Dar_es_Salaam', flag: '🇹🇿', region: 'Africa' },
+  { id: 'th_bkk', city: 'Bangkok', country: 'Thailand', timezone: 'Asia/Bangkok', flag: '🇹🇭', region: 'Asia' },
+  { id: 'tg_lfw', city: 'Lomé', country: 'Togo', timezone: 'Africa/Lome', flag: '🇹🇬', region: 'Africa' },
+  { id: 'to_tbu', city: 'Nukuʻalofa', country: 'Tonga', timezone: 'Pacific/Tongatapu', flag: '🇹🇴', region: 'Oceania' },
+  { id: 'tn_tun', city: 'Tunis', country: 'Tunisia', timezone: 'Africa/Tunis', flag: '🇹🇳', region: 'Africa' },
+  { id: 'tr_ist', city: 'Istanbul', country: 'Turkey', timezone: 'Europe/Istanbul', flag: '🇹🇷', region: 'Middle East' },
+  { id: 'tm_asb', city: 'Ashgabat', country: 'Turkmenistan', timezone: 'Asia/Ashgabat', flag: '🇹🇲', region: 'Asia' },
+  { id: 'tv_fun', city: 'Funafuti', country: 'Tuvalu', timezone: 'Pacific/Funafuti', flag: '🇹🇻', region: 'Oceania' },
+  { id: 'ug_kla', city: 'Kampala', country: 'Uganda', timezone: 'Africa/Kampala', flag: '🇺🇬', region: 'Africa' },
+  { id: 'ua_kyi', city: 'Kyiv', country: 'Ukraine', timezone: 'Europe/Kyiv', flag: '🇺🇦', region: 'Europe' },
+  { id: 'ae_dub', city: 'Dubai', country: 'United Arab Emirates', timezone: 'Asia/Dubai', flag: '🇦🇪', region: 'Middle East' },
+  { id: 'gb_lon', city: 'London', country: 'United Kingdom', timezone: 'Europe/London', flag: '🇬🇧', region: 'Europe' },
+  { id: 'us_ny', city: 'New York', country: 'United States', timezone: 'America/New_York', flag: '🇺🇸', region: 'Americas' },
+  { id: 'us_chi', city: 'Chicago', country: 'United States', timezone: 'America/Chicago', flag: '🇺🇸', region: 'Americas' },
+  { id: 'us_la', city: 'Los Angeles', country: 'United States', timezone: 'America/Los_Angeles', flag: '🇺🇸', region: 'Americas' },
+  { id: 'uy_mvd', city: 'Montevideo', country: 'Uruguay', timezone: 'America/Montevideo', flag: '🇺🇾', region: 'Americas' },
+  { id: 'uz_tas', city: 'Tashkent', country: 'Uzbekistan', timezone: 'Asia/Tashkent', flag: '🇺🇿', region: 'Asia' },
+  // V-Z
+  { id: 'vu_vli', city: 'Port Vila', country: 'Vanuatu', timezone: 'Pacific/Efate', flag: '🇻🇺', region: 'Oceania' },
+  { id: 'va_vat', city: 'Vatican City', country: 'Vatican City', timezone: 'Europe/Vatican', flag: '🇻🇦', region: 'Europe' },
+  { id: 've_ccs', city: 'Caracas', country: 'Venezuela', timezone: 'America/Caracas', flag: '🇻🇪', region: 'Americas' },
+  { id: 'vn_han', city: 'Hanoi', country: 'Vietnam', timezone: 'Asia/Bangkok', flag: '🇻🇳', region: 'Asia' },
+  { id: 'ye_ade', city: 'Aden', country: 'Yemen', timezone: 'Asia/Aden', flag: '🇾🇪', region: 'Middle East' },
+  { id: 'zm_lun', city: 'Lusaka', country: 'Zambia', timezone: 'Africa/Lusaka', flag: '🇿🇲', region: 'Africa' },
+  { id: 'zw_hre', city: 'Harare', country: 'Zimbabwe', timezone: 'Africa/Harare', flag: '🇿🇼', region: 'Africa' }
+];
+
+// Hook for persistent state
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.warn(`Error reading localStorage key "${key}":`, error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.warn(`Error setting localStorage key "${key}":`, error);
+    }
+  };
+
+  return [storedValue, setValue];
+}
+
+// Auto-detect user location based on timezone
+const detectUserLocation = () => {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const found = CITIES.find(c => c.timezone === tz);
+    if (found) return found;
+
+    // Fallback parsing if exact match not found
+    const parts = tz.split('/');
+    const city = parts[parts.length - 1]?.replace(/_/g, ' ') || 'Unknown City';
+    const country = parts[0] || 'Unknown Region';
+    return {
+      id: tz.toLowerCase().replace(/\//g, '_'),
+      city: city,
+      country: country,
+      timezone: tz,
+      flag: '📍',
+      region: 'Local'
+    };
+  } catch (error) {
+    return CITIES.find(c => c.id === 'gb_lon'); // Safe global fallback
+  }
+};
+
+// Safe formatting to prevent Intl crashes
+const safeFormat = (date, options) => {
+  try {
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+  } catch (e) {
+    return '';
+  }
+};
+
+// Extract local hour for status calculations
+const getLocalHour = (date, timezone) => {
+  try {
+    const hourStr = safeFormat(date, { hour: 'numeric', hour12: false, timeZone: timezone });
+    return parseInt(hourStr, 10);
+  } catch {
+    return 12;
+  }
+};
+
+const CompactCountryCard = ({ location, currentTime, is24Hour }) => {
+  const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: !is24Hour, timeZone: location.timezone };
+  const timeString = safeFormat(currentTime, timeOpts);
+  const localHour = getLocalHour(currentTime, location.timezone);
+  
+  // Quick day/night indicator logic
+  const isNight = localHour >= 19 || localHour < 6;
+  const isMorning = localHour >= 6 && localHour < 12;
+  
+  let statusIcon = '☀️';
+  let statusText = 'Day';
+  let statusColor = 'text-amber-500';
+
+  if (isNight) {
+    statusIcon = '🌙';
+    statusText = 'Night';
+    statusColor = 'text-indigo-400';
+  } else if (isMorning) {
+    statusIcon = '🌅';
+    statusText = 'Morning';
+    statusColor = 'text-orange-400';
+  }
+
+  return (
+    <div className="bg-slate-900/40 border border-slate-800 hover:bg-slate-800 hover:border-slate-600 rounded-xl p-3 flex items-center justify-between gap-3 transition-all cursor-default shadow-sm hover:shadow-md">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="text-2xl lg:text-3xl filter drop-shadow-sm flex-shrink-0">{location.flag}</div>
+        <div className="min-w-0">
+          <div className="text-xs font-bold text-slate-200 truncate pr-2">{location.country}</div>
+          <div className="text-[10px] text-slate-500 truncate pr-2">{location.city}</div>
+        </div>
+      </div>
+      <div className="text-right flex-shrink-0 flex flex-col items-end">
+        <div className="text-sm font-bold text-cyan-400 font-mono tracking-tight">{timeString}</div>
+        <div className={`text-[10px] font-medium flex items-center gap-1 mt-0.5 ${statusColor}`}>
+          <span className="text-[10px] opacity-80">{statusIcon}</span> {statusText}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Calculate intelligent status based on schedule
+const getFriendStatus = (localHour, schedule) => {
+  const { wake, sleep, workStart, workEnd } = schedule;
+  
+  // Handle cross-midnight sleep (e.g. sleep 23, wake 7)
+  const isSleeping = sleep > wake 
+    ? (localHour >= sleep || localHour < wake)
+    : (localHour >= sleep && localHour < wake);
+
+  if (isSleeping) return { text: 'Likely Sleeping', icon: <Moon className="w-4 h-4" />, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' };
+  if (localHour >= wake && localHour < workStart) return { text: 'Morning', icon: <Coffee className="w-4 h-4" />, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' };
+  if (localHour >= workStart && localHour < workEnd) return { text: 'Working Hours', icon: <Briefcase className="w-4 h-4" />, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' };
+  if (localHour >= workEnd && localHour < sleep - 2) return { text: 'Evening / Free', icon: <Moon className="w-4 h-4" />, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' };
+  
+  return { text: 'Late Night', icon: <Moon className="w-4 h-4" />, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' };
+};
+
+const getMessageSuggestion = (statusText) => {
+  switch (statusText) {
+    case 'Likely Sleeping': return "It's late there. Best to wait until their morning.";
+    case 'Morning': return "Good time to say hello before their day gets busy.";
+    case 'Working Hours': return "They might be busy. Messages are okay, but expect delays.";
+    case 'Evening / Free': return "Great time to chat or call! They are likely free.";
+    case 'Late Night': return "Winding down. Texting is fine, avoid calling.";
+    default: return "Check their local time before reaching out.";
+  }
+};
+
+const getTimeDifferenceDetails = (date, tz1, tz2) => {
+  try {
+    const d1Str = safeFormat(date, { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false, timeZone: tz1 });
+    const d2Str = safeFormat(date, { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false, timeZone: tz2 });
+    
+    const d1 = new Date(d1Str);
+    const d2 = new Date(d2Str);
+    
+    const diffHours = (d2 - d1) / (1000 * 60 * 60);
+    
+    if (diffHours === 0) return { text: 'Same time', value: 0 };
+    
+    const absHours = Math.floor(Math.abs(diffHours));
+    const absMins = Math.round((Math.abs(diffHours) % 1) * 60);
+    
+    let timeStr = '';
+    if (absHours > 0) timeStr += `${absHours}h `;
+    if (absMins > 0) timeStr += `${absMins}m`;
+    
+    const direction = diffHours > 0 ? 'ahead' : 'behind';
+    return { 
+      text: `${timeStr.trim()} ${direction}`,
+      value: diffHours,
+    };
+  } catch {
+    return { text: 'Unknown', value: 0 };
+  }
+};
+
+const getRelativeDay = (date, primaryTz, targetTz) => {
+  try {
+    const primaryDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: primaryTz }).format(date);
+    const targetDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: targetTz }).format(date);
+    if (primaryDateStr === targetDateStr) return 'Today';
+    if (targetDateStr > primaryDateStr) return 'Tomorrow';
+    return 'Yesterday';
+  } catch { return ''; }
+};
+
+const TopNav = ({ currentView, setView, isDarkMode, toggleTheme, settings, updateSettings }) => (
+  <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-[#020817]/90 backdrop-blur-md border-b border-slate-800">
+    <div className="flex items-center gap-8">
+      <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <Globe className="w-6 h-6 text-white" />
+        </div>
+        <div className="hidden sm:block">
+          <h1 className="text-xl font-bold text-white tracking-tight leading-none">WorldClock</h1>
+          <p className="text-[11px] text-cyan-400 font-medium uppercase tracking-wider mt-1">Your Friends</p>
+        </div>
+      </div>
+      
+      <div className="hidden lg:flex items-center gap-1 p-1 bg-slate-900/50 rounded-lg border border-slate-800">
+        {[
+          { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+          { id: 'explorer', label: 'All Countries', icon: <Map className="w-4 h-4" /> },
+          { id: 'compare', label: 'Compare Time', icon: <Activity className="w-4 h-4" /> }
+        ].map(nav => (
+          <button 
+            key={nav.id}
+            onClick={() => setView(nav.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              currentView === nav.id 
+                ? 'bg-slate-800 text-white shadow-sm' 
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            {nav.icon} {nav.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      {/* 12/24 Hour Toggle */}
+      <div className="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1">
+        <button 
+          onClick={() => updateSettings({ use24Hour: false })}
+          className={`px-3 py-1 text-xs font-medium rounded ${!settings.use24Hour ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+        >
+          12h
+        </button>
+        <button 
+          onClick={() => updateSettings({ use24Hour: true })}
+          className={`px-3 py-1 text-xs font-medium rounded ${settings.use24Hour ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+        >
+          24h
+        </button>
+      </div>
+
+      <button onClick={toggleTheme} className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors">
+        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </button>
+      
+      {/* Mobile Menu Toggle - Simplified for single file constraints */}
+      <button className="lg:hidden p-2 text-slate-400" onClick={() => setView(currentView === 'explorer' ? 'dashboard' : 'explorer')}>
+        <Menu className="w-6 h-6" />
+      </button>
+    </div>
+  </nav>
+);
+
+const LocalHero = ({ location, currentTime, is24Hour }) => {
+  const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: !is24Hour, timeZone: location.timezone };
+  const timeString = safeFormat(currentTime, timeOpts);
+  
+  const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: location.timezone };
+  const dateString = safeFormat(currentTime, dateOpts);
+  
+  const tzOpts = { timeZoneName: 'shortOffset', timeZone: location.timezone };
+  const offsetString = safeFormat(currentTime, tzOpts).split(' ').pop().replace('GMT', 'UTC');
+  
+  const tzNameOpts = { timeZoneName: 'short', timeZone: location.timezone };
+  const tzAbbrParts = safeFormat(currentTime, tzNameOpts).split(' ');
+  const tzAbbr = tzAbbrParts.length > 1 ? tzAbbrParts.pop() : offsetString;
+  
+  const localHour = getLocalHour(currentTime, location.timezone);
+  // Simple personal status
+  let statusText = 'Day';
+  let StatusIcon = Sun;
+  if (localHour >= 5 && localHour < 12) { statusText = 'Morning'; StatusIcon = Sunrise; }
+  else if (localHour >= 12 && localHour < 17) { statusText = 'Afternoon'; StatusIcon = Sun; }
+  else if (localHour >= 17 && localHour < 21) { statusText = 'Evening'; StatusIcon = Sunset; }
+  else { statusText = 'Night'; StatusIcon = Moon; }
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 mb-8 shadow-2xl shadow-black/50">
+      
+      {/* Decorative World Map Overlay Simulation */}
+      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" 
+           style={{
+             backgroundImage: 'radial-gradient(circle at 80% 50%, rgba(6, 182, 212, 0.4) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.2) 0%, transparent 40%)'
+           }}>
+      </div>
+      <div className="absolute right-0 top-0 bottom-0 w-2/3 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] [mask-image:linear-gradient(to_left,white,transparent)]"></div>
+      
+      <div className="relative z-10 p-8 lg:p-12 flex flex-col md:flex-row justify-between items-center gap-8">
+        
+        {/* Location Info */}
+        <div className="flex flex-col items-start gap-5 flex-1 w-full">
+          <div className="flex items-center gap-2 bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-full text-xs font-semibold border border-cyan-500/20 backdrop-blur-sm shadow-inner tracking-wide uppercase">
+            <MapPin className="w-3.5 h-3.5" /> Your Local Time
+          </div>
+          
+          <div className="flex items-center gap-6 w-full">
+            <div className="text-6xl lg:text-7xl drop-shadow-lg filter bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50">{location.flag}</div>
+            <div>
+              <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight drop-shadow-md">
+                {location.country}
+              </h2>
+              <p className="text-xl text-slate-400 font-medium mt-2 flex items-center gap-2">
+                {location.city} <span className="text-slate-600">•</span> <span className="text-sm">{location.timezone}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Huge Clock */}
+        <div className="flex flex-col items-center md:items-end flex-1 w-full text-center md:text-right">
+          <div className="text-6xl sm:text-7xl lg:text-8xl font-bold text-white tabular-nums tracking-tighter font-mono drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+            {timeString.replace(/(AM|PM)/i, '').trim()}
+            {!is24Hour && (
+              <span className="text-2xl lg:text-4xl font-semibold text-slate-400 ml-2 tracking-normal">
+                {timeString.includes('AM') ? 'AM' : 'PM'}
+              </span>
+            )}
+          </div>
+          <div className="text-lg lg:text-xl text-slate-300 font-medium mt-3">
+            {dateString}
+          </div>
+          
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 mt-6">
+            <span className="bg-slate-800/80 backdrop-blur text-slate-200 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-700 shadow-inner">
+              {tzAbbr}
+            </span>
+            <span className="bg-slate-800/80 backdrop-blur text-slate-200 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-700 shadow-inner">
+              {offsetString}
+            </span>
+            <span className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-500/30 flex items-center gap-2 shadow-inner">
+              <Sun className="w-4 h-4" /> {/* Simplified icon mapping for space */}
+              {statusText}
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+// Dummy icons for Hero since lucide doesn't export Sunrise/Sunset directly in basic set sometimes
+const Sunrise = Sun;
+const Sunset = Moon;
+
+const FriendCard = ({ friend, myLocation, currentTime, is24Hour, onEdit, onRemove }) => {
+  const cityData = CITIES.find(c => c.id === friend.cityId) || CITIES[0];
+  
+  const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: !is24Hour, timeZone: cityData.timezone };
+  const timeString = safeFormat(currentTime, timeOpts);
+  
+  const dateOpts = { weekday: 'short', month: 'short', day: 'numeric', timeZone: cityData.timezone };
+  const dateString = safeFormat(currentTime, dateOpts);
+  
+  const diff = getTimeDifferenceDetails(currentTime, myLocation.timezone, cityData.timezone);
+  const relativeDay = getRelativeDay(currentTime, myLocation.timezone, cityData.timezone);
+  const localHour = getLocalHour(currentTime, cityData.timezone);
+  
+  const status = getFriendStatus(localHour, friend.schedule);
+  const suggestion = getMessageSuggestion(status.text);
+
+  return (
+    <div className="group relative bg-slate-900 border border-slate-800 hover:border-slate-600 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:shadow-black/40 flex flex-col h-full">
+      
+      {}
+      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
+        <button onClick={() => onEdit(friend)} className="p-2 bg-slate-800 text-slate-300 hover:text-white rounded-full transition-colors border border-slate-700">
+          <Edit2 className="w-4 h-4" />
+        </button>
+        <button onClick={() => onRemove(friend.id)} className="p-2 bg-slate-800 text-rose-400 hover:text-rose-300 rounded-full transition-colors border border-slate-700">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+
+      {}
+      <div className="flex items-center gap-4 mb-4">
+        <div className={`w-12 h-12 rounded-full ${friend.avatarColor || 'bg-blue-500'} flex items-center justify-center text-xl font-bold text-white shadow-inner`}>
+          {friend.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-white">{friend.name}</h3>
+          <p className="text-sm text-slate-400 flex items-center gap-1">
+            <span>{cityData.flag}</span> {cityData.city}, {cityData.country}
+          </p>
+        </div>
+      </div>
+
+      {}
+      <div className="mb-4 flex-grow">
+        <div className="flex items-end gap-2 mb-1">
+          <div className="text-3xl font-bold text-white font-mono tracking-tight">{timeString}</div>
+          <div className="text-sm font-medium text-slate-400 mb-1">{relativeDay}</div>
+        </div>
+        <div className="text-sm text-slate-500">{dateString}</div>
+        <div className="text-xs text-slate-500 mt-1 font-medium bg-slate-950 inline-block px-2 py-1 rounded shadow-inner">
+          {diff.text}
+        </div>
+      </div>
+
+      {}
+      <div className={`mt-auto rounded-xl p-3 border ${status.bg}`}>
+        <div className={`text-sm font-bold flex items-center gap-2 mb-1 ${status.color}`}>
+          {status.icon} {status.text}
+        </div>
+        <p className="text-[11px] text-slate-400 leading-tight">
+          {suggestion}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const DashboardView = ({ myLocation, currentTime, settings, friends, onEditFriend, onRemoveFriend, setView }) => {
+  const [globalSearch, setGlobalSearch] = useState('');
+  
+  const filteredGlobalCities = useMemo(() => {
+    if (!globalSearch.trim()) return CITIES;
+    const lower = globalSearch.toLowerCase();
+    return CITIES.filter(c => 
+      c.country.toLowerCase().includes(lower) || 
+      c.city.toLowerCase().includes(lower) ||
+      c.timezone.toLowerCase().includes(lower)
+    );
+  }, [globalSearch]);
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <LocalHero location={myLocation} currentTime={currentTime} is24Hour={settings.use24Hour} />
+      
+      {/* Massive Global World Clock Grid */}
+      <div className="mt-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-900/30 p-5 rounded-2xl border border-slate-800/50">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+              <Globe className="w-6 h-6 text-blue-500" /> The World at a Glance
+            </h2>
+            <p className="text-sm text-slate-400 mt-1.5">Live local time for {CITIES.length} countries and territories.</p>
+          </div>
+          <div className="relative w-full md:w-80 shadow-inner">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input 
+              type="text" 
+              placeholder="Quick find country or city..." 
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600"
+            />
+            {globalSearch && (
+              <button 
+                onClick={() => setGlobalSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {filteredGlobalCities.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4 pb-8">
+            {filteredGlobalCities.map(city => (
+              <CompactCountryCard 
+                key={city.id} 
+                location={city} 
+                currentTime={currentTime} 
+                is24Hour={settings.use24Hour} 
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-slate-500 bg-slate-900/20 rounded-xl border border-slate-800 border-dashed">
+            No locations found matching "{globalSearch}". Try another search term.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ExplorerView = ({ onAddFriend }) => {
+  const [search, setSearch] = useState('');
+  
+  // Group cities by region for better browsing
+  const groupedCities = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    const filtered = CITIES.filter(c => 
+      c.city.toLowerCase().includes(lowerSearch) || 
+      c.country.toLowerCase().includes(lowerSearch) ||
+      c.timezone.toLowerCase().includes(lowerSearch)
+    );
+    
+    return filtered.reduce((acc, city) => {
+      if (!acc[city.region]) acc[city.region] = [];
+      acc[city.region].push(city);
+      return acc;
+    }, {});
+  }, [search]);
+
+  return (
+    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300 pb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Global Directory</h2>
+          <p className="text-slate-400 text-sm mt-1">Search for any country or city to add a friend</p>
+        </div>
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+          <input 
+            type="text" 
+            placeholder="Search by city (e.g., Tokyo), country..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+          />
+        </div>
+      </div>
+
+      {Object.keys(groupedCities).length === 0 ? (
+        <div className="text-center py-12 text-slate-500">No locations found matching your search.</div>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedCities).sort().map(([region, cities]) => (
+            <div key={region}>
+              <h3 className="text-lg font-semibold text-cyan-400 mb-4 px-2 border-b border-slate-800 pb-2">{region}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {cities.sort((a,b) => a.country.localeCompare(b.country)).map(city => (
+                  <div key={city.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between group hover:border-slate-600 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{city.flag}</div>
+                      <div>
+                        <div className="font-bold text-slate-200">{city.city}</div>
+                        <div className="text-xs text-slate-500">{city.country}</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => onAddFriend(city)}
+                      className="opacity-0 group-hover:opacity-100 bg-cyan-600/20 text-cyan-400 hover:bg-cyan-500 hover:text-white p-2 rounded-lg transition-all"
+                      title="Add Friend in this city"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FriendModal = ({ isOpen, onClose, onSave, editingFriend, initialCity }) => {
+  const [name, setName] = useState('');
+  const [cityId, setCityId] = useState('');
+  const [schedule, setSchedule] = useState({ wake: 7, workStart: 9, workEnd: 17, sleep: 23 });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingFriend) {
+        setName(editingFriend.name);
+        setCityId(editingFriend.cityId);
+        setSchedule(editingFriend.schedule || { wake: 7, workStart: 9, workEnd: 17, sleep: 23 });
+      } else {
+        setName('');
+        setCityId(initialCity?.id || CITIES[0].id);
+        setSchedule({ wake: 7, workStart: 9, workEnd: 17, sleep: 23 });
+      }
+    }
+  }, [isOpen, editingFriend, initialCity]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim() || !cityId) return;
+    
+    // Assign a random cool color if new
+    const colors = ['bg-rose-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500'];
+    const avatarColor = editingFriend?.avatarColor || colors[Math.floor(Math.random() * colors.length)];
+
+    onSave({
+      id: editingFriend ? editingFriend.id : Date.now().toString(),
+      name: name.trim(),
+      cityId,
+      schedule,
+      avatarColor
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+          <h2 className="text-xl font-bold text-white">{editingFriend ? 'Edit Friend' : 'Add New Friend'}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Name</label>
+              <input 
+                required autoFocus
+                type="text" value={name} onChange={e => setName(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-cyan-500 focus:outline-none"
+                placeholder="e.g., Alex, Mom, Dev Team"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Location</label>
+              <select 
+                value={cityId} onChange={e => setCityId(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-cyan-500 focus:outline-none"
+              >
+                {CITIES.map(c => <option key={c.id} value={c.id}>{c.flag} {c.city}, {c.country}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 space-y-4">
+             <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2"><Settings className="w-4 h-4" /> Personal Schedule (Local Time)</h3>
+             <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Wakes Up</label>
+                  <select value={schedule.wake} onChange={e => setSchedule({...schedule, wake: parseInt(e.target.value)})} className="w-full bg-slate-900 border border-slate-700 rounded text-sm p-1.5 text-white">
+                    {[...Array(24)].map((_, i) => <option key={i} value={i}>{`${i.toString().padStart(2,'0')}:00`}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Goes to Sleep</label>
+                  <select value={schedule.sleep} onChange={e => setSchedule({...schedule, sleep: parseInt(e.target.value)})} className="w-full bg-slate-900 border border-slate-700 rounded text-sm p-1.5 text-white">
+                    {[...Array(24)].map((_, i) => <option key={i} value={i}>{`${i.toString().padStart(2,'0')}:00`}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Work Starts</label>
+                  <select value={schedule.workStart} onChange={e => setSchedule({...schedule, workStart: parseInt(e.target.value)})} className="w-full bg-slate-900 border border-slate-700 rounded text-sm p-1.5 text-white">
+                    {[...Array(24)].map((_, i) => <option key={i} value={i}>{`${i.toString().padStart(2,'0')}:00`}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Work Ends</label>
+                  <select value={schedule.workEnd} onChange={e => setSchedule({...schedule, workEnd: parseInt(e.target.value)})} className="w-full bg-slate-900 border border-slate-700 rounded text-sm p-1.5 text-white">
+                    {[...Array(24)].map((_, i) => <option key={i} value={i}>{`${i.toString().padStart(2,'0')}:00`}</option>)}
+                  </select>
+                </div>
+             </div>
+             <p className="text-[10px] text-slate-500">Used to estimate if they are sleeping or busy.</p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-400 hover:text-white font-medium">Cancel</button>
+            <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-cyan-500/20">
+              Save Friend
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const CompareView = ({ friends, myLocation, currentTime, is24Hour }) => {
+  // Select up to 3 friends for comparison + self
+  const compareList = [ { ...myLocation, name: 'You' }, ...friends.slice(0, 3).map(f => ({ ...CITIES.find(c=>c.id === f.cityId), name: f.name })) ].filter(Boolean);
+
+  if (compareList.length < 2) {
+    return (
+      <div className="text-center py-20">
+        <Activity className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">Not enough data</h2>
+        <p className="text-slate-400">Add some friends first to use the comparison tool.</p>
+      </div>
+    );
+  }
+
+  // Generate a 12 hour window starting from current local hour
+  const currentLocalHour = getLocalHour(currentTime, myLocation.timezone);
+  const hoursWindow = Array.from({length: 12}, (_, i) => (currentLocalHour + i) % 24);
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 mb-8">
+        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><Activity className="w-6 h-6 text-cyan-500" /> Availability Timeline</h2>
+        <p className="text-slate-400 text-sm">Visualize overlapping free time for the next 12 hours based on standard schedules.</p>
+      </div>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm text-left min-w-[800px]">
+          <thead className="bg-slate-950 text-slate-400 uppercase text-xs border-b border-slate-800">
+            <tr>
+              <th className="px-6 py-4 font-semibold">Location / Person</th>
+              <th className="px-6 py-4 font-semibold">Current Time</th>
+              {/* Render hour headers based on user's local time */}
+              <th colSpan={12} className="px-6 py-4 font-semibold text-center bg-slate-900/50">Next 12 Hours (Your Time)</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/50">
+            {compareList.map((loc, idx) => {
+              const timeStr = safeFormat(currentTime, { hour: '2-digit', minute: '2-digit', hour12: !is24Hour, timeZone: loc.timezone });
+              const diff = idx === 0 ? { value: 0 } : getTimeDifferenceDetails(currentTime, myLocation.timezone, loc.timezone);
+              
+              // For timeline blocks, calculate what hour it is THERE when it is X hour HERE.
+              // diff.value is hours THEY are ahead of US.
+              return (
+                <tr key={loc.id || loc.name} className="hover:bg-slate-800/30 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-white">{loc.name}</div>
+                    <div className="text-xs text-slate-500">{loc.flag} {loc.city}</div>
+                  </td>
+                  <td className="px-6 py-4 font-mono text-cyan-400 font-bold">
+                    {timeStr}
+                  </td>
+                  
+                  {/* Timeline blocks */}
+                  <td colSpan={12} className="px-6 py-2">
+                    <div className="flex w-full h-8 rounded overflow-hidden shadow-inner bg-slate-950">
+                      {hoursWindow.map((myHour, i) => {
+                         // Calculate their hour. Simple math, doesn't account for complex DST boundary exactly on the hour but good enough for visual planner.
+                         const theirHour = Math.floor((myHour + (diff.value || 0)) % 24 + 24) % 24; 
+                         
+                         // Determine color based on simple default schedule (assuming wake 7, sleep 23)
+                         let blockColor = 'bg-slate-800'; // night
+                         if (theirHour >= 7 && theirHour < 9) blockColor = 'bg-amber-500/80'; // morning
+                         else if (theirHour >= 9 && theirHour < 18) blockColor = 'bg-blue-500/80'; // work
+                         else if (theirHour >= 18 && theirHour < 23) blockColor = 'bg-emerald-500/80'; // evening free
+
+                         return (
+                           <div 
+                             key={i} 
+                             className={`flex-1 border-r border-slate-900 last:border-0 ${blockColor} relative group flex items-center justify-center cursor-help transition-opacity hover:opacity-80`}
+                             title={`${loc.name}'s local time: ${theirHour}:00`}
+                           >
+                             <span className="text-[9px] font-bold text-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                               {theirHour}
+                             </span>
+                           </div>
+                         );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        
+        {/* Legend */}
+        <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-center gap-6 text-xs text-slate-400">
+           <span className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-800 rounded-sm"></div> Night / Sleep</span>
+           <span className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-500/80 rounded-sm"></div> Morning</span>
+           <span className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500/80 rounded-sm"></div> Work Hours</span>
+           <span className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500/80 rounded-sm"></div> Free / Evening</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(true); // Premium dark default
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [view, setView] = useState('dashboard'); // dashboard, explorer, compare
+  
+  // Persistent State
+  const [settings, setSettings] = useLocalStorage('wc_settings_v1', { use24Hour: false, language: 'en' });
+  const [myLocation, setMyLocation] = useLocalStorage('wc_myloc_v1', detectUserLocation());
+  const [friends, setFriends] = useLocalStorage('wc_friends_v1', []); // Array of Friend objects
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFriend, setEditingFriend] = useState(null);
+  const [initialModalCity, setInitialModalCity] = useState(null);
+
+  // Main Clock Tick
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [isDarkMode]);
+
+  const handleSaveFriend = (friendData) => {
+    setFriends(prev => {
+      const exists = prev.findIndex(f => f.id === friendData.id);
+      if (exists >= 0) {
+        const newFriends = [...prev];
+        newFriends[exists] = friendData;
+        return newFriends;
+      }
+      return [...prev, friendData];
+    });
+    setIsModalOpen(false);
+    setView('dashboard'); // Redirect to dashboard to see new friend
+  };
+
+  const handleRemoveFriend = (id) => {
+    if(window.confirm("Remove this friend from your dashboard?")) {
+      setFriends(prev => prev.filter(f => f.id !== id));
+    }
+  };
+
+  const openAddModal = (city = null) => {
+    setEditingFriend(null);
+    setInitialModalCity(city);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (friend) => {
+    setEditingFriend(friend);
+    setInitialModalCity(null);
+    setIsModalOpen(true);
+  };
+
+  return (
+    <div className={`min-h-screen ${isDarkMode ? 'bg-[#020817] text-slate-300' : 'bg-slate-50 text-slate-900'} font-sans transition-colors duration-300 selection:bg-cyan-500/30`}>
+      <TopNav 
+        currentView={view} 
+        setView={setView} 
+        isDarkMode={isDarkMode} 
+        toggleTheme={() => setIsDarkMode(!isDarkMode)} 
+        settings={settings}
+        updateSettings={newSettings => setSettings({...settings, ...newSettings})}
+      />
+      
+      <main className="max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 pt-6 pb-24">
+        {view === 'dashboard' && (
+          <DashboardView 
+            myLocation={myLocation} 
+            currentTime={currentTime} 
+            settings={settings} 
+            friends={friends}
+            onEditFriend={openEditModal}
+            onRemoveFriend={handleRemoveFriend}
+            setView={setView}
+          />
+        )}
+
+        {view === 'explorer' && (
+          <ExplorerView onAddFriend={openAddModal} />
+        )}
+
+        {view === 'compare' && (
+          <CompareView 
+            friends={friends}
+            myLocation={myLocation}
+            currentTime={currentTime}
+            is24Hour={settings.use24Hour}
+          />
+        )}
+      </main>
+
+      {/* Shared Footer */}
+      <footer className="border-t border-slate-800 bg-[#020817] py-8 px-8 mt-auto">
+        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4" /> WorldClock — Your Friends Around the World © {new Date().getFullYear()}
+          </div>
+          <div className="flex gap-6">
+            <span className="hover:text-slate-300 transition-colors cursor-pointer">Privacy</span>
+            <span className="hover:text-slate-300 transition-colors cursor-pointer">Time Zone Data</span>
+            <span className="hover:text-slate-300 transition-colors cursor-pointer">Settings</span>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modals */}
+      <FriendModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSave={handleSaveFriend}
+        editingFriend={editingFriend}
+        initialCity={initialModalCity}
+      />
+    </div>
+  );
+}
