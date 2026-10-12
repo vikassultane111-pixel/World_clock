@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorldClock - Live Global Time</title>
+    <meta name="description" content="Premium real-time world clock, time difference calculator, and global time zone dashboard.">
     
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -15,13 +16,22 @@
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
                         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+                    },
+                    colors: {
+                        navy: {
+                            900: '#0a1124',
+                            950: '#030816',
+                        }
+                    },
+                    backgroundImage: {
+                        'hero-gradient': 'linear-gradient(to right, rgba(3,8,22,0.95) 0%, rgba(3,8,22,0.7) 50%, rgba(3,8,22,0.4) 100%)',
                     }
                 }
             }
         }
     </script>
 
-    <!-- React, ReactDOM, and Babel for in-browser JSX compilation -->
+    <!-- React, ReactDOM, and Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -29,15 +39,62 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body {
-            background-color: #020817; /* Dark navy background */
+            background-color: #030816; /* Deep navy */
             color: #f8fafc;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
-        /* Custom scrollbar for a premium look */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0a1124; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(10, 17, 36, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(10, 17, 36, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 3D Premium Card Effects */
+        .card-3d {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+        .card-3d:hover {
+            transform: translateY(-8px) scale(1.03) perspective(1000px) rotateX(2deg) rotateY(-2deg);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 25px rgba(6, 182, 212, 0.2);
+            border-color: rgba(6, 182, 212, 0.4);
+            z-index: 10;
+        }
+
+        /* 3D Text Effects for maximum legibility over images */
+        .text-3d {
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.2);
+        }
+        .hero-text-3d {
+            text-shadow: 0 4px 20px rgba(0,0,0,0.9), 0 0 30px rgba(6,182,212,0.3);
+        }
+
+        /* Time-of-day gradients for cards */
+        .bg-time-morning { background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(180,83,9,0.2) 100%); }
+        .bg-time-afternoon { background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(6,182,212,0.15) 100%); }
+        .bg-time-evening { background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(147,51,234,0.15) 100%); }
+        .bg-time-night { background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,58,138,0.15) 100%); }
+        .bg-time-sleeping { background: linear-gradient(135deg, rgba(3,8,22,0.95) 0%, rgba(0,0,0,0.4) 100%); }
+
+        /* Hide scrollbar for filter chips */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
@@ -46,398 +103,457 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- Custom SVG Icons (Replacing lucide-react for standalone compatibility) ---
         const IconGlobe = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>;
         const IconSearch = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
-        const IconX = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         const IconMapPin = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
         const IconSun = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>;
+        const IconSunrise = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v6"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg>;
+        const IconSunset = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v6"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 16-4 4-4-4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg>;
         const IconMoon = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>;
+        const IconZzz = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h6l-6 8h6"/><path d="M14 4h6l-6 8h6"/></svg>;
+        const IconClock = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>;
+        const IconCalendar = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
+        const IconUsers = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        const IconMap = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg>;
+        const IconInfo = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
+        const IconArrowRight = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+        const IconArrowLeftRight = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>;
 
         const CITIES = [
-            // A
-            { id: 'af_kbl', city: 'Kabul', country: 'Afghanistan', timezone: 'Asia/Kabul', flag: '🇦🇫', region: 'Asia' },
-            { id: 'al_tia', city: 'Tirana', country: 'Albania', timezone: 'Europe/Tirane', flag: '🇦🇱', region: 'Europe' },
-            { id: 'dz_alg', city: 'Algiers', country: 'Algeria', timezone: 'Africa/Algiers', flag: '🇩🇿', region: 'Africa' },
-            { id: 'ad_alv', city: 'Andorra la Vella', country: 'Andorra', timezone: 'Europe/Andorra', flag: '🇦🇩', region: 'Europe' },
-            { id: 'ao_lad', city: 'Luanda', country: 'Angola', timezone: 'Africa/Luanda', flag: '🇦🇴', region: 'Africa' },
-            { id: 'ar_bue', city: 'Buenos Aires', country: 'Argentina', timezone: 'America/Argentina/Buenos_Aires', flag: '🇦🇷', region: 'Americas' },
-            { id: 'am_evn', city: 'Yerevan', country: 'Armenia', timezone: 'Asia/Yerevan', flag: '🇦🇲', region: 'Asia' },
-            { id: 'au_syd', city: 'Sydney', country: 'Australia', timezone: 'Australia/Sydney', flag: '🇦🇺', region: 'Oceania' },
-            { id: 'au_mel', city: 'Melbourne', country: 'Australia', timezone: 'Australia/Melbourne', flag: '🇦🇺', region: 'Oceania' },
-            { id: 'au_per', city: 'Perth', country: 'Australia', timezone: 'Australia/Perth', flag: '🇦🇺', region: 'Oceania' },
-            { id: 'at_vie', city: 'Vienna', country: 'Austria', timezone: 'Europe/Vienna', flag: '🇦🇹', region: 'Europe' },
-            { id: 'az_bku', city: 'Baku', country: 'Azerbaijan', timezone: 'Asia/Baku', flag: '🇦🇿', region: 'Asia' },
-            // B
-            { id: 'bs_nas', city: 'Nassau', country: 'Bahamas', timezone: 'America/Nassau', flag: '🇧🇸', region: 'Americas' },
-            { id: 'bh_bah', city: 'Manama', country: 'Bahrain', timezone: 'Asia/Bahrain', flag: '🇧🇭', region: 'Middle East' },
-            { id: 'bd_dha', city: 'Dhaka', country: 'Bangladesh', timezone: 'Asia/Dhaka', flag: '🇧🇩', region: 'Asia' },
-            { id: 'bb_bgi', city: 'Bridgetown', country: 'Barbados', timezone: 'America/Barbados', flag: '🇧🇧', region: 'Americas' },
-            { id: 'by_msq', city: 'Minsk', country: 'Belarus', timezone: 'Europe/Minsk', flag: '🇧🇾', region: 'Europe' },
-            { id: 'be_bru', city: 'Brussels', country: 'Belgium', timezone: 'Europe/Brussels', flag: '🇧🇪', region: 'Europe' },
-            { id: 'bz_bze', city: 'Belmopan', country: 'Belize', timezone: 'America/Belize', flag: '🇧🇿', region: 'Americas' },
-            { id: 'bj_coo', city: 'Porto-Novo', country: 'Benin', timezone: 'Africa/Porto-Novo', flag: '🇧🇯', region: 'Africa' },
-            { id: 'bt_thi', city: 'Thimphu', country: 'Bhutan', timezone: 'Asia/Thimphu', flag: '🇧🇹', region: 'Asia' },
-            { id: 'bo_lpz', city: 'La Paz', country: 'Bolivia', timezone: 'America/La_Paz', flag: '🇧🇴', region: 'Americas' },
-            { id: 'ba_sjj', city: 'Sarajevo', country: 'Bosnia & Herzegovina', timezone: 'Europe/Sarajevo', flag: '🇧🇦', region: 'Europe' },
-            { id: 'bw_gbe', city: 'Gaborone', country: 'Botswana', timezone: 'Africa/Gaborone', flag: '🇧🇼', region: 'Africa' },
-            { id: 'br_sao', city: 'São Paulo', country: 'Brazil', timezone: 'America/Sao_Paulo', flag: '🇧🇷', region: 'Americas' },
-            { id: 'br_rio', city: 'Rio de Janeiro', country: 'Brazil', timezone: 'America/Sao_Paulo', flag: '🇧🇷', region: 'Americas' },
-            { id: 'bn_bwn', city: 'B. S. Begawan', country: 'Brunei', timezone: 'Asia/Brunei', flag: '🇧🇳', region: 'Asia' },
-            { id: 'bg_sof', city: 'Sofia', country: 'Bulgaria', timezone: 'Europe/Sofia', flag: '🇧🇬', region: 'Europe' },
-            { id: 'bf_oua', city: 'Ouagadougou', country: 'Burkina Faso', timezone: 'Africa/Ouagadougou', flag: '🇧🇫', region: 'Africa' },
-            { id: 'bi_buj', city: 'Bujumbura', country: 'Burundi', timezone: 'Africa/Bujumbura', flag: '🇧🇮', region: 'Africa' },
-            // C
-            { id: 'kh_pnh', city: 'Phnom Penh', country: 'Cambodia', timezone: 'Asia/Phnom_Penh', flag: '🇰🇭', region: 'Asia' },
-            { id: 'cm_yao', city: 'Yaoundé', country: 'Cameroon', timezone: 'Africa/Douala', flag: '🇨🇲', region: 'Africa' },
-            { id: 'ca_tor', city: 'Toronto', country: 'Canada', timezone: 'America/Toronto', flag: '🇨🇦', region: 'Americas' },
-            { id: 'ca_van', city: 'Vancouver', country: 'Canada', timezone: 'America/Vancouver', flag: '🇨🇦', region: 'Americas' },
-            { id: 'cv_rai', city: 'Praia', country: 'Cape Verde', timezone: 'Atlantic/Cape_Verde', flag: '🇨🇻', region: 'Africa' },
-            { id: 'cf_bgf', city: 'Bangui', country: 'Central African Rep.', timezone: 'Africa/Bangui', flag: '🇨🇫', region: 'Africa' },
-            { id: 'td_ndj', city: 'N\'Djamena', country: 'Chad', timezone: 'Africa/Ndjamena', flag: '🇹🇩', region: 'Africa' },
-            { id: 'cl_san', city: 'Santiago', country: 'Chile', timezone: 'America/Santiago', flag: '🇨🇱', region: 'Americas' },
-            { id: 'cn_bei', city: 'Beijing', country: 'China', timezone: 'Asia/Shanghai', flag: '🇨🇳', region: 'Asia' },
-            { id: 'co_bog', city: 'Bogotá', country: 'Colombia', timezone: 'America/Bogota', flag: '🇨🇴', region: 'Americas' },
-            { id: 'km_yva', city: 'Moroni', country: 'Comoros', timezone: 'Indian/Comoro', flag: '🇰🇲', region: 'Africa' },
-            { id: 'cg_bzv', city: 'Brazzaville', country: 'Congo', timezone: 'Africa/Brazzaville', flag: '🇨🇬', region: 'Africa' },
-            { id: 'cr_sjo', city: 'San José', country: 'Costa Rica', timezone: 'America/Costa_Rica', flag: '🇨🇷', region: 'Americas' },
-            { id: 'hr_zag', city: 'Zagreb', country: 'Croatia', timezone: 'Europe/Zagreb', flag: '🇭🇷', region: 'Europe' },
-            { id: 'cu_hav', city: 'Havana', country: 'Cuba', timezone: 'America/Havana', flag: '🇨🇺', region: 'Americas' },
-            { id: 'cy_nic', city: 'Nicosia', country: 'Cyprus', timezone: 'Asia/Nicosia', flag: '🇨🇾', region: 'Europe' },
-            { id: 'cz_prg', city: 'Prague', country: 'Czechia', timezone: 'Europe/Prague', flag: '🇨🇿', region: 'Europe' },
-            // D-F
-            { id: 'dk_cph', city: 'Copenhagen', country: 'Denmark', timezone: 'Europe/Copenhagen', flag: '🇩🇰', region: 'Europe' },
-            { id: 'dj_jib', city: 'Djibouti', country: 'Djibouti', timezone: 'Africa/Djibouti', flag: '🇩🇯', region: 'Africa' },
-            { id: 'do_sdq', city: 'Santo Domingo', country: 'Dominican Rep.', timezone: 'America/Santo_Domingo', flag: '🇩🇴', region: 'Americas' },
-            { id: 'ec_uio', city: 'Quito', country: 'Ecuador', timezone: 'America/Guayaquil', flag: '🇪🇨', region: 'Americas' },
-            { id: 'eg_cai', city: 'Cairo', country: 'Egypt', timezone: 'Africa/Cairo', flag: '🇪🇬', region: 'Africa' },
-            { id: 'sv_sal', city: 'San Salvador', country: 'El Salvador', timezone: 'America/El_Salvador', flag: '🇸🇻', region: 'Americas' },
-            { id: 'gq_ssg', city: 'Malabo', country: 'Equatorial Guinea', timezone: 'Africa/Malabo', flag: '🇬🇶', region: 'Africa' },
-            { id: 'er_asm', city: 'Asmara', country: 'Eritrea', timezone: 'Africa/Asmara', flag: '🇪🇷', region: 'Africa' },
-            { id: 'ee_tll', city: 'Tallinn', country: 'Estonia', timezone: 'Europe/Tallinn', flag: '🇪🇪', region: 'Europe' },
-            { id: 'sz_mbq', city: 'Mbabane', country: 'Eswatini', timezone: 'Africa/Mbabane', flag: '🇸🇿', region: 'Africa' },
-            { id: 'et_add', city: 'Addis Ababa', country: 'Ethiopia', timezone: 'Africa/Addis_Ababa', flag: '🇪🇹', region: 'Africa' },
-            { id: 'fj_suv', city: 'Suva', country: 'Fiji', timezone: 'Pacific/Fiji', flag: '🇫🇯', region: 'Oceania' },
-            { id: 'fi_hel', city: 'Helsinki', country: 'Finland', timezone: 'Europe/Helsinki', flag: '🇫🇮', region: 'Europe' },
-            { id: 'fr_par', city: 'Paris', country: 'France', timezone: 'Europe/Paris', flag: '🇫🇷', region: 'Europe' },
-            // G-I
-            { id: 'ga_lbv', city: 'Libreville', country: 'Gabon', timezone: 'Africa/Libreville', flag: '🇬🇦', region: 'Africa' },
-            { id: 'gm_bjl', city: 'Banjul', country: 'Gambia', timezone: 'Africa/Banjul', flag: '🇬🇲', region: 'Africa' },
-            { id: 'ge_tbs', city: 'Tbilisi', country: 'Georgia', timezone: 'Asia/Tbilisi', flag: '🇬🇪', region: 'Asia' },
-            { id: 'de_ber', city: 'Berlin', country: 'Germany', timezone: 'Europe/Berlin', flag: '🇩🇪', region: 'Europe' },
-            { id: 'gh_acc', city: 'Accra', country: 'Ghana', timezone: 'Africa/Accra', flag: '🇬🇭', region: 'Africa' },
-            { id: 'gr_ath', city: 'Athens', country: 'Greece', timezone: 'Europe/Athens', flag: '🇬🇷', region: 'Europe' },
-            { id: 'gt_gua', city: 'Guatemala City', country: 'Guatemala', timezone: 'America/Guatemala', flag: '🇬🇹', region: 'Americas' },
-            { id: 'gn_cky', city: 'Conakry', country: 'Guinea', timezone: 'Africa/Conakry', flag: '🇬🇳', region: 'Africa' },
-            { id: 'gy_geo', city: 'Georgetown', country: 'Guyana', timezone: 'America/Guyana', flag: '🇬🇾', region: 'Americas' },
-            { id: 'ht_pap', city: 'Port-au-Prince', country: 'Haiti', timezone: 'America/Port-au-Prince', flag: '🇭🇹', region: 'Americas' },
-            { id: 'hn_tgu', city: 'Tegucigalpa', country: 'Honduras', timezone: 'America/Tegucigalpa', flag: '🇭🇳', region: 'Americas' },
-            { id: 'hu_bud', city: 'Budapest', country: 'Hungary', timezone: 'Europe/Budapest', flag: '🇭🇺', region: 'Europe' },
-            { id: 'is_rey', city: 'Reykjavik', country: 'Iceland', timezone: 'Atlantic/Reykjavik', flag: '🇮🇸', region: 'Europe' },
-            { id: 'in_del', city: 'New Delhi', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia' },
-            { id: 'in_mum', city: 'Mumbai', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia' },
-            { id: 'in_pun', city: 'Pune', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia' },
-            { id: 'id_jak', city: 'Jakarta', country: 'Indonesia', timezone: 'Asia/Jakarta', flag: '🇮🇩', region: 'Asia' },
-            { id: 'ir_thr', city: 'Tehran', country: 'Iran', timezone: 'Asia/Tehran', flag: '🇮🇷', region: 'Middle East' },
-            { id: 'iq_bgw', city: 'Baghdad', country: 'Iraq', timezone: 'Asia/Baghdad', flag: '🇮🇶', region: 'Middle East' },
-            { id: 'ie_dub', city: 'Dublin', country: 'Ireland', timezone: 'Europe/Dublin', flag: '🇮🇪', region: 'Europe' },
-            { id: 'il_tlv', city: 'Tel Aviv', country: 'Israel', timezone: 'Asia/Jerusalem', flag: '🇮🇱', region: 'Middle East' },
-            { id: 'it_rom', city: 'Rome', country: 'Italy', timezone: 'Europe/Rome', flag: '🇮🇹', region: 'Europe' },
-            // J-L
-            { id: 'jm_kin', city: 'Kingston', country: 'Jamaica', timezone: 'America/Jamaica', flag: '🇯🇲', region: 'Americas' },
-            { id: 'jp_tok', city: 'Tokyo', country: 'Japan', timezone: 'Asia/Tokyo', flag: '🇯🇵', region: 'Asia' },
-            { id: 'jo_amm', city: 'Amman', country: 'Jordan', timezone: 'Asia/Amman', flag: '🇯🇴', region: 'Middle East' },
-            { id: 'kz_ala', city: 'Almaty', country: 'Kazakhstan', timezone: 'Asia/Almaty', flag: '🇰🇿', region: 'Asia' },
-            { id: 'ke_nai', city: 'Nairobi', country: 'Kenya', timezone: 'Africa/Nairobi', flag: '🇰🇪', region: 'Africa' },
-            { id: 'ki_trw', city: 'Tarawa', country: 'Kiribati', timezone: 'Pacific/Tarawa', flag: '🇰🇮', region: 'Oceania' },
-            { id: 'kp_fyn', city: 'Pyongyang', country: 'North Korea', timezone: 'Asia/Pyongyang', flag: '🇰🇵', region: 'Asia' },
-            { id: 'kr_seo', city: 'Seoul', country: 'South Korea', timezone: 'Asia/Seoul', flag: '🇰🇷', region: 'Asia' },
-            { id: 'kw_kwi', city: 'Kuwait City', country: 'Kuwait', timezone: 'Asia/Kuwait', flag: '🇰🇼', region: 'Middle East' },
-            { id: 'kg_fru', city: 'Bishkek', country: 'Kyrgyzstan', timezone: 'Asia/Bishkek', flag: '🇰🇬', region: 'Asia' },
-            { id: 'la_vte', city: 'Vientiane', country: 'Laos', timezone: 'Asia/Vientiane', flag: '🇱🇦', region: 'Asia' },
-            { id: 'lv_rix', city: 'Riga', country: 'Latvia', timezone: 'Europe/Riga', flag: '🇱🇻', region: 'Europe' },
-            { id: 'lb_bey', city: 'Beirut', country: 'Lebanon', timezone: 'Asia/Beirut', flag: '🇱🇧', region: 'Middle East' },
-            { id: 'ls_msu', city: 'Maseru', country: 'Lesotho', timezone: 'Africa/Maseru', flag: '🇱🇸', region: 'Africa' },
-            { id: 'lr_mlw', city: 'Monrovia', country: 'Liberia', timezone: 'Africa/Monrovia', flag: '🇱🇷', region: 'Africa' },
-            { id: 'ly_tip', city: 'Tripoli', country: 'Libya', timezone: 'Africa/Tripoli', flag: '🇱🇾', region: 'Africa' },
-            { id: 'li_vad', city: 'Vaduz', country: 'Liechtenstein', timezone: 'Europe/Vaduz', flag: '🇱🇮', region: 'Europe' },
-            { id: 'lt_vno', city: 'Vilnius', country: 'Lithuania', timezone: 'Europe/Vilnius', flag: '🇱🇹', region: 'Europe' },
-            { id: 'lu_lux', city: 'Luxembourg', country: 'Luxembourg', timezone: 'Europe/Luxembourg', flag: '🇱🇺', region: 'Europe' },
-            // M-O
-            { id: 'mg_tnr', city: 'Antananarivo', country: 'Madagascar', timezone: 'Indian/Antananarivo', flag: '🇲🇬', region: 'Africa' },
-            { id: 'mw_llw', city: 'Lilongwe', country: 'Malawi', timezone: 'Africa/Blantyre', flag: '🇲🇼', region: 'Africa' },
-            { id: 'my_kul', city: 'Kuala Lumpur', country: 'Malaysia', timezone: 'Asia/Kuala_Lumpur', flag: '🇲🇾', region: 'Asia' },
-            { id: 'mv_mle', city: 'Malé', country: 'Maldives', timezone: 'Indian/Maldives', flag: '🇲🇻', region: 'Asia' },
-            { id: 'ml_bko', city: 'Bamako', country: 'Mali', timezone: 'Africa/Bamako', flag: '🇲🇱', region: 'Africa' },
-            { id: 'mt_mla', city: 'Valletta', country: 'Malta', timezone: 'Europe/Malta', flag: '🇲🇹', region: 'Europe' },
-            { id: 'mh_maj', city: 'Majuro', country: 'Marshall Islands', timezone: 'Pacific/Majuro', flag: '🇲🇭', region: 'Oceania' },
-            { id: 'mr_nkc', city: 'Nouakchott', country: 'Mauritania', timezone: 'Africa/Nouakchott', flag: '🇲🇷', region: 'Africa' },
-            { id: 'mu_mru', city: 'Port Louis', country: 'Mauritius', timezone: 'Indian/Mauritius', flag: '🇲🇺', region: 'Africa' },
-            { id: 'mx_cdmx', city: 'Mexico City', country: 'Mexico', timezone: 'America/Mexico_City', flag: '🇲🇽', region: 'Americas' },
-            { id: 'md_kiv', city: 'Chișinău', country: 'Moldova', timezone: 'Europe/Chisinau', flag: '🇲🇩', region: 'Europe' },
-            { id: 'mc_mcm', city: 'Monaco', country: 'Monaco', timezone: 'Europe/Monaco', flag: '🇲🇨', region: 'Europe' },
-            { id: 'mn_uln', city: 'Ulaanbaatar', country: 'Mongolia', timezone: 'Asia/Ulaanbaatar', flag: '🇲🇳', region: 'Asia' },
-            { id: 'me_tgd', city: 'Podgorica', country: 'Montenegro', timezone: 'Europe/Podgorica', flag: '🇲🇪', region: 'Europe' },
-            { id: 'ma_cas', city: 'Casablanca', country: 'Morocco', timezone: 'Africa/Casablanca', flag: '🇲🇦', region: 'Africa' },
-            { id: 'mz_mpm', city: 'Maputo', country: 'Mozambique', timezone: 'Africa/Maputo', flag: '🇲🇿', region: 'Africa' },
-            { id: 'mm_rgn', city: 'Yangon', country: 'Myanmar', timezone: 'Asia/Yangon', flag: '🇲🇲', region: 'Asia' },
-            { id: 'na_wdh', city: 'Windhoek', country: 'Namibia', timezone: 'Africa/Windhoek', flag: '🇳🇦', region: 'Africa' },
-            { id: 'np_ktm', city: 'Kathmandu', country: 'Nepal', timezone: 'Asia/Kathmandu', flag: '🇳🇵', region: 'Asia' },
-            { id: 'nl_ams', city: 'Amsterdam', country: 'Netherlands', timezone: 'Europe/Amsterdam', flag: '🇳🇱', region: 'Europe' },
-            { id: 'nz_auc', city: 'Auckland', country: 'New Zealand', timezone: 'Pacific/Auckland', flag: '🇳🇿', region: 'Oceania' },
-            { id: 'ni_mga', city: 'Managua', country: 'Nicaragua', timezone: 'America/Managua', flag: '🇳🇮', region: 'Americas' },
-            { id: 'ne_nim', city: 'Niamey', country: 'Niger', timezone: 'Africa/Niamey', flag: '🇳🇪', region: 'Africa' },
-            { id: 'ng_lag', city: 'Lagos', country: 'Nigeria', timezone: 'Africa/Lagos', flag: '🇳🇬', region: 'Africa' },
-            { id: 'mk_skp', city: 'Skopje', country: 'North Macedonia', timezone: 'Europe/Skopje', flag: '🇲🇰', region: 'Europe' },
-            { id: 'no_osl', city: 'Oslo', country: 'Norway', timezone: 'Europe/Oslo', flag: '🇳🇴', region: 'Europe' },
-            { id: 'om_mct', city: 'Muscat', country: 'Oman', timezone: 'Asia/Muscat', flag: '🇴🇲', region: 'Middle East' },
-            // P-R
-            { id: 'pk_khi', city: 'Karachi', country: 'Pakistan', timezone: 'Asia/Karachi', flag: '🇵🇰', region: 'Asia' },
-            { id: 'pa_pty', city: 'Panama City', country: 'Panama', timezone: 'America/Panama', flag: '🇵🇦', region: 'Americas' },
-            { id: 'pg_pom', city: 'Port Moresby', country: 'Papua New Guinea', timezone: 'Pacific/Port_Moresby', flag: '🇵🇬', region: 'Oceania' },
-            { id: 'py_asu', city: 'Asunción', country: 'Paraguay', timezone: 'America/Asuncion', flag: '🇵🇾', region: 'Americas' },
-            { id: 'pe_lim', city: 'Lima', country: 'Peru', timezone: 'America/Lima', flag: '🇵🇪', region: 'Americas' },
-            { id: 'ph_mnl', city: 'Manila', country: 'Philippines', timezone: 'Asia/Manila', flag: '🇵🇭', region: 'Asia' },
-            { id: 'pl_waw', city: 'Warsaw', country: 'Poland', timezone: 'Europe/Warsaw', flag: '🇵🇱', region: 'Europe' },
-            { id: 'pt_lis', city: 'Lisbon', country: 'Portugal', timezone: 'Europe/Lisbon', flag: '🇵🇹', region: 'Europe' },
-            { id: 'qa_doh', city: 'Doha', country: 'Qatar', timezone: 'Asia/Qatar', flag: '🇶🇦', region: 'Middle East' },
-            { id: 'ro_buh', city: 'Bucharest', country: 'Romania', timezone: 'Europe/Bucharest', flag: '🇷🇴', region: 'Europe' },
-            { id: 'ru_mos', city: 'Moscow', country: 'Russia', timezone: 'Europe/Moscow', flag: '🇷🇺', region: 'Europe' },
-            { id: 'rw_kgl', city: 'Kigali', country: 'Rwanda', timezone: 'Africa/Kigali', flag: '🇷🇼', region: 'Africa' },
-            // S-U
-            { id: 'sa_riy', city: 'Riyadh', country: 'Saudi Arabia', timezone: 'Asia/Riyadh', flag: '🇸🇦', region: 'Middle East' },
-            { id: 'sn_dkr', city: 'Dakar', country: 'Senegal', timezone: 'Africa/Dakar', flag: '🇸🇳', region: 'Africa' },
-            { id: 'rs_beg', city: 'Belgrade', country: 'Serbia', timezone: 'Europe/Belgrade', flag: '🇷🇸', region: 'Europe' },
-            { id: 'sc_sez', city: 'Victoria', country: 'Seychelles', timezone: 'Indian/Mahe', flag: '🇸🇨', region: 'Africa' },
-            { id: 'sl_fna', city: 'Freetown', country: 'Sierra Leone', timezone: 'Africa/Freetown', flag: '🇸🇱', region: 'Africa' },
-            { id: 'sg_sin', city: 'Singapore', country: 'Singapore', timezone: 'Asia/Singapore', flag: '🇸🇬', region: 'Asia' },
-            { id: 'sk_bts', city: 'Bratislava', country: 'Slovakia', timezone: 'Europe/Bratislava', flag: '🇸🇰', region: 'Europe' },
-            { id: 'si_lju', city: 'Ljubljana', country: 'Slovenia', timezone: 'Europe/Ljubljana', flag: '🇸🇮', region: 'Europe' },
-            { id: 'so_mgq', city: 'Mogadishu', country: 'Somalia', timezone: 'Africa/Mogadishu', flag: '🇸🇴', region: 'Africa' },
-            { id: 'za_joh', city: 'Johannesburg', country: 'South Africa', timezone: 'Africa/Johannesburg', flag: '🇿🇦', region: 'Africa' },
-            { id: 'es_mad', city: 'Madrid', country: 'Spain', timezone: 'Europe/Madrid', flag: '🇪🇸', region: 'Europe' },
-            { id: 'lk_cmb', city: 'Colombo', country: 'Sri Lanka', timezone: 'Asia/Colombo', flag: '🇱🇰', region: 'Asia' },
-            { id: 'sd_krt', city: 'Khartoum', country: 'Sudan', timezone: 'Africa/Khartoum', flag: '🇸🇩', region: 'Africa' },
-            { id: 'se_sto', city: 'Stockholm', country: 'Sweden', timezone: 'Europe/Stockholm', flag: '🇸🇪', region: 'Europe' },
-            { id: 'ch_zur', city: 'Zurich', country: 'Switzerland', timezone: 'Europe/Zurich', flag: '🇨🇭', region: 'Europe' },
-            { id: 'sy_dam', city: 'Damascus', country: 'Syria', timezone: 'Asia/Damascus', flag: '🇸🇾', region: 'Middle East' },
-            { id: 'tw_tpe', city: 'Taipei', country: 'Taiwan', timezone: 'Asia/Taipei', flag: '🇹🇼', region: 'Asia' },
-            { id: 'tj_dyu', city: 'Dushanbe', country: 'Tajikistan', timezone: 'Asia/Dushanbe', flag: '🇹🇯', region: 'Asia' },
-            { id: 'tz_dar', city: 'Dar es Salaam', country: 'Tanzania', timezone: 'Africa/Dar_es_Salaam', flag: '🇹🇿', region: 'Africa' },
-            { id: 'th_bkk', city: 'Bangkok', country: 'Thailand', timezone: 'Asia/Bangkok', flag: '🇹🇭', region: 'Asia' },
-            { id: 'tg_lfw', city: 'Lomé', country: 'Togo', timezone: 'Africa/Lome', flag: '🇹🇬', region: 'Africa' },
-            { id: 'to_tbu', city: 'Nukuʻalofa', country: 'Tonga', timezone: 'Pacific/Tongatapu', flag: '🇹🇴', region: 'Oceania' },
-            { id: 'tn_tun', city: 'Tunis', country: 'Tunisia', timezone: 'Africa/Tunis', flag: '🇹🇳', region: 'Africa' },
-            { id: 'tr_ist', city: 'Istanbul', country: 'Turkey', timezone: 'Europe/Istanbul', flag: '🇹🇷', region: 'Middle East' },
-            { id: 'tm_asb', city: 'Ashgabat', country: 'Turkmenistan', timezone: 'Asia/Ashgabat', flag: '🇹🇲', region: 'Asia' },
-            { id: 'tv_fun', city: 'Funafuti', country: 'Tuvalu', timezone: 'Pacific/Funafuti', flag: '🇹🇻', region: 'Oceania' },
-            { id: 'ug_kla', city: 'Kampala', country: 'Uganda', timezone: 'Africa/Kampala', flag: '🇺🇬', region: 'Africa' },
-            { id: 'ua_kyi', city: 'Kyiv', country: 'Ukraine', timezone: 'Europe/Kyiv', flag: '🇺🇦', region: 'Europe' },
-            { id: 'ae_dub', city: 'Dubai', country: 'United Arab Emirates', timezone: 'Asia/Dubai', flag: '🇦🇪', region: 'Middle East' },
-            { id: 'gb_lon', city: 'London', country: 'United Kingdom', timezone: 'Europe/London', flag: '🇬🇧', region: 'Europe' },
-            { id: 'us_ny', city: 'New York', country: 'United States', timezone: 'America/New_York', flag: '🇺🇸', region: 'Americas' },
-            { id: 'us_chi', city: 'Chicago', country: 'United States', timezone: 'America/Chicago', flag: '🇺🇸', region: 'Americas' },
-            { id: 'us_la', city: 'Los Angeles', country: 'United States', timezone: 'America/Los_Angeles', flag: '🇺🇸', region: 'Americas' },
-            { id: 'uy_mvd', city: 'Montevideo', country: 'Uruguay', timezone: 'America/Montevideo', flag: '🇺🇾', region: 'Americas' },
-            { id: 'uz_tas', city: 'Tashkent', country: 'Uzbekistan', timezone: 'Asia/Tashkent', flag: '🇺🇿', region: 'Asia' },
-            // V-Z
-            { id: 'vu_vli', city: 'Port Vila', country: 'Vanuatu', timezone: 'Pacific/Efate', flag: '🇻🇺', region: 'Oceania' },
-            { id: 'va_vat', city: 'Vatican City', country: 'Vatican City', timezone: 'Europe/Vatican', flag: '🇻🇦', region: 'Europe' },
-            { id: 've_ccs', city: 'Caracas', country: 'Venezuela', timezone: 'America/Caracas', flag: '🇻🇪', region: 'Americas' },
-            { id: 'vn_han', city: 'Hanoi', country: 'Vietnam', timezone: 'Asia/Bangkok', flag: '🇻🇳', region: 'Asia' },
-            { id: 'ye_ade', city: 'Aden', country: 'Yemen', timezone: 'Asia/Aden', flag: '🇾🇪', region: 'Middle East' },
-            { id: 'zm_lun', city: 'Lusaka', country: 'Zambia', timezone: 'Africa/Lusaka', flag: '🇿🇲', region: 'Africa' },
-            { id: 'zw_hre', city: 'Harare', country: 'Zimbabwe', timezone: 'Africa/Harare', flag: '🇿🇼', region: 'Africa' }
-        ];
+            // Asia
+            { id: 'in_ccu', city: 'Kolkata', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia', image: 'https://images.unsplash.com/photo-1558431382-27e303142255?auto=format&fit=crop&w=800&q=80' },
+            { id: 'in_del', city: 'New Delhi', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia', image: 'https://images.unsplash.com/photo-1587474260580-08c3ec0b2b8e?auto=format&fit=crop&w=800&q=80' },
+            { id: 'in_bom', city: 'Mumbai', country: 'India', timezone: 'Asia/Kolkata', flag: '🇮🇳', region: 'Asia', image: 'https://images.unsplash.com/photo-1522204523234-8729aa6e3d5f?auto=format&fit=crop&w=800&q=80' },
+            { id: 'jp_tok', city: 'Tokyo', country: 'Japan', timezone: 'Asia/Tokyo', flag: '🇯🇵', region: 'Asia', image: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80' },
+            { id: 'jp_osa', city: 'Osaka', country: 'Japan', timezone: 'Asia/Tokyo', flag: '🇯🇵', region: 'Asia', image: 'https://images.unsplash.com/photo-1590559899731-a382839ce556?auto=format&fit=crop&w=800&q=80' },
+            { id: 'cn_sha', city: 'Shanghai', country: 'China', timezone: 'Asia/Shanghai', flag: '🇨🇳', region: 'Asia', image: 'https://images.unsplash.com/photo-1548679847-19069d2d0b57?auto=format&fit=crop&w=800&q=80' },
+            { id: 'cn_pek', city: 'Beijing', country: 'China', timezone: 'Asia/Shanghai', flag: '🇨🇳', region: 'Asia', image: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&w=800&q=80' },
+            { id: 'kr_sel', city: 'Seoul', country: 'South Korea', timezone: 'Asia/Seoul', flag: '🇰🇷', region: 'Asia', image: 'https://images.unsplash.com/photo-1617277717081-3037ce6ddb0f?auto=format&fit=crop&w=800&q=80' },
+            { id: 'sg_sin', city: 'Singapore', country: 'Singapore', timezone: 'Asia/Singapore', flag: '🇸🇬', region: 'Asia', image: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=800&q=80' },
+            { id: 'id_jkt', city: 'Jakarta', country: 'Indonesia', timezone: 'Asia/Jakarta', flag: '🇮🇩', region: 'Asia', image: 'https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=800&q=80' },
+            { id: 'id_dps', city: 'Bali', country: 'Indonesia', timezone: 'Asia/Makassar', flag: '🇮🇩', region: 'Asia', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80' },
+            { id: 'th_bkk', city: 'Bangkok', country: 'Thailand', timezone: 'Asia/Bangkok', flag: '🇹🇭', region: 'Asia', image: 'https://images.unsplash.com/photo-1508009603885-247a505b2938?auto=format&fit=crop&w=800&q=80' },
+            { id: 'vn_sgn', city: 'Ho Chi Minh City', country: 'Vietnam', timezone: 'Asia/Ho_Chi_Minh', flag: '🇻🇳', region: 'Asia', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80' },
+            { id: 'my_kul', city: 'Kuala Lumpur', country: 'Malaysia', timezone: 'Asia/Kuala_Lumpur', flag: '🇲🇾', region: 'Asia', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ph_mnl', city: 'Manila', country: 'Philippines', timezone: 'Asia/Manila', flag: '🇵🇭', region: 'Asia', image: 'https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=800&q=80' },
+            { id: 'tw_tpe', city: 'Taipei', country: 'Taiwan', timezone: 'Asia/Taipei', flag: '🇹🇼', region: 'Asia', image: 'https://images.unsplash.com/photo-1577701783515-998811776997?auto=format&fit=crop&w=800&q=80' },
+            { id: 'np_ktm', city: 'Kathmandu', country: 'Nepal', timezone: 'Asia/Kathmandu', flag: '🇳🇵', region: 'Asia', image: 'https://images.unsplash.com/photo-1517427677506-ade074eb14b5?auto=format&fit=crop&w=800&q=80' },
+            { id: 'bd_dac', city: 'Dhaka', country: 'Bangladesh', timezone: 'Asia/Dhaka', flag: '🇧🇩', region: 'Asia', image: 'https://images.unsplash.com/photo-1601058269785-f5b2b2e53b81?auto=format&fit=crop&w=800&q=80' },
+            { id: 'pk_khi', city: 'Karachi', country: 'Pakistan', timezone: 'Asia/Karachi', flag: '🇵🇰', region: 'Asia', image: 'https://images.unsplash.com/photo-1627885061483-3c66f54c9c1b?auto=format&fit=crop&w=800&q=80' },
+            { id: 'lk_cmb', city: 'Colombo', country: 'Sri Lanka', timezone: 'Asia/Colombo', flag: '🇱🇰', region: 'Asia', image: 'https://images.unsplash.com/photo-1580436541340-a19e53066601?auto=format&fit=crop&w=800&q=80' },
+            { id: 'kz_ala', city: 'Almaty', country: 'Kazakhstan', timezone: 'Asia/Almaty', flag: '🇰🇿', region: 'Asia', image: 'https://images.unsplash.com/photo-1558500204-6101c51db316?auto=format&fit=crop&w=800&q=80' },
+            { id: 'mm_rgn', city: 'Yangon', country: 'Myanmar', timezone: 'Asia/Yangon', flag: '🇲🇲', region: 'Asia', image: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=800&q=80' },
+
+            // Middle East
+            { id: 'ae_dxb', city: 'Dubai', country: 'UAE', timezone: 'Asia/Dubai', flag: '🇦🇪', region: 'Middle East', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ae_auh', city: 'Abu Dhabi', country: 'UAE', timezone: 'Asia/Dubai', flag: '🇦🇪', region: 'Middle East', image: 'https://images.unsplash.com/photo-1572913982888-29bfdf13f704?auto=format&fit=crop&w=800&q=80' },
+            { id: 'sa_ruh', city: 'Riyadh', country: 'Saudi Arabia', timezone: 'Asia/Riyadh', flag: '🇸🇦', region: 'Middle East', image: 'https://images.unsplash.com/photo-1586724237569-f3d0c1ebd8c1?auto=format&fit=crop&w=800&q=80' },
+            { id: 'tr_ist', city: 'Istanbul', country: 'Turkey', timezone: 'Europe/Istanbul', flag: '🇹🇷', region: 'Middle East', image: 'https://images.unsplash.com/photo-1522210871306-0e1329cbfdb7?auto=format&fit=crop&w=800&q=80' },
+            { id: 'il_tlv', city: 'Tel Aviv', country: 'Israel', timezone: 'Asia/Jerusalem', flag: '🇮🇱', region: 'Middle East', image: 'https://images.unsplash.com/photo-1544621535-6488a096cce2?auto=format&fit=crop&w=800&q=80' },
+            { id: 'qa_doh', city: 'Doha', country: 'Qatar', timezone: 'Asia/Qatar', flag: '🇶🇦', region: 'Middle East', image: 'https://images.unsplash.com/photo-1602058474136-127e289bfbf2?auto=format&fit=crop&w=800&q=80' },
+
+            // Europe
+            { id: 'gb_lon', city: 'London', country: 'United Kingdom', timezone: 'Europe/London', flag: '🇬🇧', region: 'Europe', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=800&q=80' },
+            { id: 'fr_par', city: 'Paris', country: 'France', timezone: 'Europe/Paris', flag: '🇫🇷', region: 'Europe', image: 'https://images.unsplash.com/photo-1502602881469-41473d40ec4c?auto=format&fit=crop&w=800&q=80' },
+            { id: 'de_ber', city: 'Berlin', country: 'Germany', timezone: 'Europe/Berlin', flag: '🇩🇪', region: 'Europe', image: 'https://images.unsplash.com/photo-1560969184-10fe8719e047?auto=format&fit=crop&w=800&q=80' },
+            { id: 'de_muc', city: 'Munich', country: 'Germany', timezone: 'Europe/Berlin', flag: '🇩🇪', region: 'Europe', image: 'https://images.unsplash.com/photo-1595867375252-870097c23bc1?auto=format&fit=crop&w=800&q=80' },
+            { id: 'it_rom', city: 'Rome', country: 'Italy', timezone: 'Europe/Rome', flag: '🇮🇹', region: 'Europe', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=800&q=80' },
+            { id: 'it_mil', city: 'Milan', country: 'Italy', timezone: 'Europe/Rome', flag: '🇮🇹', region: 'Europe', image: 'https://images.unsplash.com/photo-1520697960611-e40fc38fb1b8?auto=format&fit=crop&w=800&q=80' },
+            { id: 'es_mad', city: 'Madrid', country: 'Spain', timezone: 'Europe/Madrid', flag: '🇪🇸', region: 'Europe', image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80' },
+            { id: 'es_bcn', city: 'Barcelona', country: 'Spain', timezone: 'Europe/Madrid', flag: '🇪🇸', region: 'Europe', image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=800&q=80' },
+            { id: 'nl_ams', city: 'Amsterdam', country: 'Netherlands', timezone: 'Europe/Amsterdam', flag: '🇳🇱', region: 'Europe', image: 'https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ch_zrh', city: 'Zurich', country: 'Switzerland', timezone: 'Europe/Zurich', flag: '🇨🇭', region: 'Europe', image: 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=800&q=80' },
+            { id: 'se_sto', city: 'Stockholm', country: 'Sweden', timezone: 'Europe/Stockholm', flag: '🇸🇪', region: 'Europe', image: 'https://images.unsplash.com/photo-1509356843151-3e7d96a41511?auto=format&fit=crop&w=800&q=80' },
+            { id: 'no_osl', city: 'Oslo', country: 'Norway', timezone: 'Europe/Oslo', flag: '🇳🇴', region: 'Europe', image: 'https://images.unsplash.com/photo-1513622470522-26c3115599b5?auto=format&fit=crop&w=800&q=80' },
+            { id: 'dk_cph', city: 'Copenhagen', country: 'Denmark', timezone: 'Europe/Copenhagen', flag: '🇩🇰', region: 'Europe', image: 'https://images.unsplash.com/photo-1513622790541-eaa84d356909?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ru_mow', city: 'Moscow', country: 'Russia', timezone: 'Europe/Moscow', flag: '🇷🇺', region: 'Europe', image: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=800&q=80' },
+            { id: 'gr_ath', city: 'Athens', country: 'Greece', timezone: 'Europe/Athens', flag: '🇬🇷', region: 'Europe', image: 'https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?auto=format&fit=crop&w=800&q=80' },
+            { id: 'at_vie', city: 'Vienna', country: 'Austria', timezone: 'Europe/Vienna', flag: '🇦🇹', region: 'Europe', image: 'https://images.unsplash.com/photo-1516550893923-42d28e5677af?auto=format&fit=crop&w=800&q=80' },
+            { id: 'pt_lis', city: 'Lisbon', country: 'Portugal', timezone: 'Europe/Lisbon', flag: '🇵🇹', region: 'Europe', image: 'https://images.unsplash.com/photo-1548707309-dcebe61858ce?auto=format&fit=crop&w=800&q=80' },
+            { id: 'pl_waw', city: 'Warsaw', country: 'Poland', timezone: 'Europe/Warsaw', flag: '🇵🇱', region: 'Europe', image: 'https://images.unsplash.com/photo-1538330627166-339affdd95b9?auto=format&fit=crop&w=800&q=80' },
+
+            // North America
+            { id: 'us_nyc', city: 'New York', country: 'United States', timezone: 'America/New_York', flag: '🇺🇸', region: 'North America', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80' },
+            { id: 'us_lax', city: 'Los Angeles', country: 'United States', timezone: 'America/Los_Angeles', flag: '🇺🇸', region: 'North America', image: 'https://images.unsplash.com/photo-1518398046578-8cca57782e17?auto=format&fit=crop&w=800&q=80' },
+            { id: 'us_chi', city: 'Chicago', country: 'United States', timezone: 'America/Chicago', flag: '🇺🇸', region: 'North America', image: 'https://images.unsplash.com/photo-1494522855154-9297ac14b55f?auto=format&fit=crop&w=800&q=80' },
+            { id: 'us_mia', city: 'Miami', country: 'United States', timezone: 'America/New_York', flag: '🇺🇸', region: 'North America', image: 'https://images.unsplash.com/photo-1533106497176-45ae14e1715c?auto=format&fit=crop&w=800&q=80' },
+            { id: 'us_sea', city: 'Seattle', country: 'United States', timezone: 'America/Los_Angeles', flag: '🇺🇸', region: 'North America', image: 'https://images.unsplash.com/photo-1502808039327-04c995958c21?auto=format&fit=crop&w=800&q=80' },
+            { id: 'us_sfo', city: 'San Francisco', country: 'United States', timezone: 'America/Los_Angeles', flag: '🇺🇸', region: 'North America', image: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ca_tor', city: 'Toronto', country: 'Canada', timezone: 'America/Toronto', flag: '🇨🇦', region: 'North America', image: 'https://images.unsplash.com/photo-1507992781348-310259076fe0?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ca_yvr', city: 'Vancouver', country: 'Canada', timezone: 'America/Vancouver', flag: '🇨🇦', region: 'North America', image: 'https://images.unsplash.com/photo-1559511260-66a654ae982a?auto=format&fit=crop&w=800&q=80' },
+            { id: 'mx_mex', city: 'Mexico City', country: 'Mexico', timezone: 'America/Mexico_City', flag: '🇲🇽', region: 'North America', image: 'https://images.unsplash.com/photo-1518105779142-d9715d31481f?auto=format&fit=crop&w=800&q=80' },
+
+            // South America
+            { id: 'br_sao', city: 'São Paulo', country: 'Brazil', timezone: 'America/Sao_Paulo', flag: '🇧🇷', region: 'South America', image: 'https://images.unsplash.com/photo-1543059080-f9b1272213d5?auto=format&fit=crop&w=800&q=80' },
+            { id: 'br_rio', city: 'Rio de Janeiro', country: 'Brazil', timezone: 'America/Sao_Paulo', flag: '🇧🇷', region: 'South America', image: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ar_bue', city: 'Buenos Aires', country: 'Argentina', timezone: 'America/Argentina/Buenos_Aires', flag: '🇦🇷', region: 'South America', image: 'https://images.unsplash.com/photo-1613098763529-166292418e24?auto=format&fit=crop&w=800&q=80' },
+            { id: 'co_bog', city: 'Bogotá', country: 'Colombia', timezone: 'America/Bogota', flag: '🇨🇴', region: 'South America', image: 'https://images.unsplash.com/photo-1584803734458-1f5be66a0118?auto=format&fit=crop&w=800&q=80' },
+            { id: 'pe_lim', city: 'Lima', country: 'Peru', timezone: 'America/Lima', flag: '🇵🇪', region: 'South America', image: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=80' },
+            { id: 'cl_scl', city: 'Santiago', country: 'Chile', timezone: 'America/Santiago', flag: '🇨🇱', region: 'South America', image: 'https://images.unsplash.com/photo-1552554746-81ec01c70a8d?auto=format&fit=crop&w=800&q=80' },
+
+            // Africa
+            { id: 'za_jnb', city: 'Johannesburg', country: 'South Africa', timezone: 'Africa/Johannesburg', flag: '🇿🇦', region: 'Africa', image: 'https://images.unsplash.com/photo-1579705745811-a32bef7856a3?auto=format&fit=crop&w=800&q=80' },
+            { id: 'za_cpt', city: 'Cape Town', country: 'South Africa', timezone: 'Africa/Johannesburg', flag: '🇿🇦', region: 'Africa', image: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=800&q=80' },
+            { id: 'eg_cai', city: 'Cairo', country: 'Egypt', timezone: 'Africa/Cairo', flag: '🇪🇬', region: 'Africa', image: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ng_los', city: 'Lagos', country: 'Nigeria', timezone: 'Africa/Lagos', flag: '🇳🇬', region: 'Africa', image: 'https://images.unsplash.com/photo-1608670176100-8809e5b7b90e?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ke_nbo', city: 'Nairobi', country: 'Kenya', timezone: 'Africa/Nairobi', flag: '🇰🇪', region: 'Africa', image: 'https://images.unsplash.com/photo-1588619623838-89c56eab0830?auto=format&fit=crop&w=800&q=80' },
+            { id: 'ma_cas', city: 'Casablanca', country: 'Morocco', timezone: 'Africa/Casablanca', flag: '🇲🇦', region: 'Africa', image: 'https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=800&q=80' },
+
+            // Oceania
+            { id: 'au_syd', city: 'Sydney', country: 'Australia', timezone: 'Australia/Sydney', flag: '🇦🇺', region: 'Oceania', image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80' },
+            { id: 'au_mel', city: 'Melbourne', country: 'Australia', timezone: 'Australia/Melbourne', flag: '🇦🇺', region: 'Oceania', image: 'https://images.unsplash.com/photo-1514395462725-fb4566210144?auto=format&fit=crop&w=800&q=80' },
+            { id: 'nz_akl', city: 'Auckland', country: 'New Zealand', timezone: 'Pacific/Auckland', flag: '🇳🇿', region: 'Oceania', image: 'https://images.unsplash.com/photo-1507608283584-c68995a5fcc1?auto=format&fit=crop&w=800&q=80' },
+            { id: 'nz_wlg', city: 'Wellington', country: 'New Zealand', timezone: 'Pacific/Auckland', flag: '🇳🇿', region: 'Oceania', image: 'https://images.unsplash.com/photo-1589885885068-d05a4155f94b?auto=format&fit=crop&w=800&q=80' }
+        ].sort((a, b) => a.country.localeCompare(b.country));
+
+        const REGIONS = ['All', 'Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Middle East'];
+        const TIME_FILTERS = ['All Time', 'Morning', 'Afternoon', 'Evening', 'Night', 'Likely Sleeping'];
+
+        const safeFormat = (date, options) => {
+            try { return new Intl.DateTimeFormat('en-US', options).format(date); } 
+            catch (e) { return ''; }
+        };
 
         const detectUserLocation = () => {
             try {
                 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                // Special check for India to match the prompt's specific request for Kolkata default
+                if (tz === 'Asia/Calcutta' || tz === 'Asia/Kolkata') {
+                    return CITIES.find(c => c.id === 'in_ccu') || CITIES[0];
+                }
                 const found = CITIES.find(c => c.timezone === tz);
                 if (found) return found;
 
                 const parts = tz.split('/');
                 const city = parts[parts.length - 1]?.replace(/_/g, ' ') || 'Unknown City';
-                const country = parts[0] || 'Unknown Region';
-                return {
-                    id: tz.toLowerCase().replace(/\//g, '_'),
-                    city: city,
-                    country: country,
-                    timezone: tz,
-                    flag: '📍',
-                    region: 'Local'
-                };
+                return { id: tz, city: city, country: parts[0] || 'Unknown', timezone: tz, flag: '📍', region: 'Local', image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1000&q=80' };
             } catch (error) {
-                return CITIES.find(c => c.id === 'gb_lon');
-            }
-        };
-
-        const safeFormat = (date, options) => {
-            try {
-                return new Intl.DateTimeFormat('en-US', options).format(date);
-            } catch (e) {
-                return '';
+                return CITIES.find(c => c.id === 'in_ccu') || CITIES[0]; // Fallback
             }
         };
 
         const getLocalHour = (date, timezone) => {
             try {
-                const hourStr = safeFormat(date, { hour: 'numeric', hour12: false, timeZone: timezone });
-                return parseInt(hourStr, 10);
-            } catch {
-                return 12;
-            }
+                return parseInt(safeFormat(date, { hour: 'numeric', hour12: false, timeZone: timezone }), 10);
+            } catch { return 12; }
         };
 
-        const getRelativeDay = (date, primaryTz, targetTz) => {
+        const getTimeOfDayStatus = (localHour) => {
+            if (localHour >= 6 && localHour < 12) return { text: 'Morning', icon: <IconSunrise className="w-4 h-4"/>, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', gradient: 'bg-time-morning' };
+            if (localHour >= 12 && localHour < 17) return { text: 'Afternoon', icon: <IconSun className="w-4 h-4"/>, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20', gradient: 'bg-time-afternoon' };
+            if (localHour >= 17 && localHour < 21) return { text: 'Evening', icon: <IconSunset className="w-4 h-4"/>, color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', gradient: 'bg-time-evening' };
+            if (localHour >= 21 || localHour < 0) return { text: 'Night', icon: <IconMoon className="w-4 h-4"/>, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', gradient: 'bg-time-night' };
+            return { text: 'Likely Sleeping', icon: <IconZzz className="w-4 h-4"/>, color: 'text-indigo-300', bg: 'bg-indigo-500/10 border-indigo-500/20', gradient: 'bg-time-sleeping' };
+        };
+
+        const getTimeDifference = (date, tz1, tz2) => {
             try {
-                const primaryDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: primaryTz }).format(date);
-                const targetDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: targetTz }).format(date);
-                if (primaryDateStr === targetDateStr) return 'Today';
-                if (targetDateStr > primaryDateStr) return 'Tomorrow';
-                return 'Yesterday';
-            } catch { return ''; }
+                const d1Str = safeFormat(date, { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false, timeZone: tz1 });
+                const d2Str = safeFormat(date, { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false, timeZone: tz2 });
+                
+                const diffHours = (new Date(d2Str) - new Date(d1Str)) / (1000 * 60 * 60);
+                if (diffHours === 0) return { text: 'Same time', value: 0 };
+                
+                const absHours = Math.floor(Math.abs(diffHours));
+                const absMins = Math.round((Math.abs(diffHours) % 1) * 60);
+                
+                let timeStr = `${absHours}h`;
+                if (absMins > 0) timeStr += ` ${absMins}m`;
+                
+                return { 
+                    text: `${timeStr} ${diffHours > 0 ? 'ahead' : 'behind'}`,
+                    value: diffHours,
+                    isAhead: diffHours > 0
+                };
+            } catch { return { text: 'Unknown', value: 0 }; }
         };
 
-        const CompactCountryCard = ({ location, currentTime, myLocation }) => {
-            // Updated to show seconds! 02:36:37 PM
-            const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: location.timezone };
-            const timeString = safeFormat(currentTime, timeOpts);
-            
-            const dateOpts = { weekday: 'short', month: 'short', day: 'numeric', timeZone: location.timezone };
-            const dateString = safeFormat(currentTime, dateOpts);
-            
-            const relativeDay = getRelativeDay(currentTime, myLocation.timezone, location.timezone);
-            const localHour = getLocalHour(currentTime, location.timezone);
-            
-            const isNight = localHour >= 19 || localHour < 6;
-            const isMorning = localHour >= 6 && localHour < 12;
-            
-            let statusIcon = <IconSun className="w-3 h-3" />;
-            let statusText = 'Day';
-            let statusColor = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-
-            if (isNight) {
-                statusIcon = <IconMoon className="w-3 h-3" />;
-                statusText = 'Night';
-                statusColor = 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20';
-            } else if (isMorning) {
-                statusIcon = <IconSun className="w-3 h-3" />;
-                statusText = 'Morning';
-                statusColor = 'text-orange-400 bg-orange-500/10 border-orange-500/20';
-            }
-
-            return (
-                <div className="bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-600 rounded-xl p-4 flex flex-col justify-between gap-3 transition-all cursor-default shadow-sm hover:shadow-md h-full">
-                    
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                            <div className="text-2xl filter drop-shadow-sm flex-shrink-0">{location.flag}</div>
-                            <div className="min-w-0">
-                                <div className="text-sm font-bold text-white truncate">{location.country}</div>
-                                <div className="text-[11px] text-slate-400 truncate">{location.city}</div>
-                            </div>
+        const TopNav = () => (
+            <nav className="sticky top-0 z-50 glass border-b border-white/5">
+                <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+                    {/* Logo */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
+                            <IconGlobe className="w-6 h-6 text-cyan-400" />
                         </div>
-                        <div className={`px-2 py-1 rounded-md text-[10px] font-medium flex items-center gap-1 border ${statusColor}`}>
-                            {statusIcon} {statusText}
+                        <div>
+                            <h1 className="text-xl font-bold text-white tracking-tight leading-none">WorldClock</h1>
+                            <p className="text-[10px] text-cyan-400 font-medium uppercase tracking-widest mt-1">Live Global Time</p>
                         </div>
                     </div>
 
-                    <div className="mt-2">
-                        <div className="text-2xl font-bold text-cyan-400 font-mono tracking-tight tabular-nums">
-                            {timeString}
+                    {/* Desktop Menu */}
+                    <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-300">
+                        <a href="#" className="flex items-center gap-2 text-cyan-400 bg-cyan-950/30 px-4 py-2 rounded-lg border border-cyan-500/20"><IconGlobe className="w-4 h-4"/> Home</a>
+                        <a href="#world-clock" className="flex items-center gap-2 hover:text-white transition-colors"><IconClock className="w-4 h-4"/> World Clock</a>
+                        <a href="#time-difference" className="flex items-center gap-2 hover:text-white transition-colors"><IconArrowLeftRight className="w-4 h-4"/> Time Difference</a>
+                        <a href="#world-clock" className="flex items-center gap-2 hover:text-white transition-colors"><IconMap className="w-4 h-4"/> Countries</a>
+                        <a href="#" className="flex items-center gap-2 hover:text-white transition-colors"><IconInfo className="w-4 h-4"/> About</a>
+                    </div>
+
+                    {/* Right Actions */}
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:flex relative w-64">
+                            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input type="text" placeholder="Search country or city..." className="w-full bg-navy-900 border border-slate-700/50 rounded-full py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors" />
                         </div>
-                        <div className="flex justify-between items-end mt-1">
-                            <div className="text-xs text-slate-500">{dateString}</div>
-                            <div className="text-[10px] font-medium bg-slate-950 px-2 py-0.5 rounded text-slate-400 border border-slate-800">
-                                {relativeDay}
+                        <div className="h-6 w-px bg-slate-800 mx-2"></div>
+                        <button className="text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2">
+                            <IconGlobe className="w-4 h-4"/> EN
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        );
+
+        const HeroSection = ({ location, currentTime }) => {
+            const timeString = safeFormat(currentTime, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: location.timezone });
+            const dateString = safeFormat(currentTime, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: location.timezone });
+            
+            const offsetString = safeFormat(currentTime, { timeZoneName: 'shortOffset', timeZone: location.timezone }).split(' ').pop().replace('GMT', 'UTC');
+            const tzAbbr = safeFormat(currentTime, { timeZoneName: 'short', timeZone: location.timezone }).split(' ').pop();
+            
+            const localHour = getLocalHour(currentTime, location.timezone);
+            const status = getTimeOfDayStatus(localHour);
+
+            return (
+                <div className="relative rounded-3xl overflow-hidden glass-card card-3d border border-cyan-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-12">
+                    {/* Rich Dynamic Background */}
+                    <div className="absolute inset-0 z-0 bg-hero-gradient"></div>
+                    <div 
+                        className="absolute inset-0 z-0 opacity-60 bg-cover bg-center mix-blend-overlay transition-all duration-1000 scale-105"
+                        style={{ backgroundImage: `url(${location.image || 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=2000&q=80'})` }}
+                    ></div>
+                    
+                    {/* Dark gradient overlay for extreme contrast */}
+                    <div className="absolute inset-0 z-0 bg-gradient-to-r from-[#030816]/95 via-[#030816]/70 to-[#030816]/30"></div>
+                    
+                    <div className="relative z-10 p-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row justify-between items-center gap-10">
+                        
+                        {/* Left: Location Info */}
+                        <div className="flex-1 w-full text-center lg:text-left">
+                            <div className="inline-flex items-center gap-2 bg-blue-600/20 text-blue-300 px-4 py-1.5 rounded-full text-xs font-bold border border-blue-500/40 backdrop-blur-md mb-6 uppercase tracking-wider shadow-inner">
+                                <IconMapPin className="w-3.5 h-3.5" /> Your Local Time
                             </div>
+                            
+                            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-5">
+                                <div className="text-7xl lg:text-8xl filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">{location.flag}</div>
+                                <div>
+                                    <h2 className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight flex items-center gap-3 justify-center lg:justify-start hero-text-3d">
+                                        {location.country} 
+                                    </h2>
+                                    <p className="text-xl text-slate-200 font-semibold mt-2 text-3d">{location.city}</p>
+                                    <p className="text-sm text-cyan-300 mt-1 font-medium">{location.timezone}</p>
+                                    
+                                    <div className="flex flex-wrap justify-center lg:justify-start gap-3 mt-6">
+                                        <span className="bg-navy-950/90 backdrop-blur text-slate-200 px-4 py-2 rounded-lg text-sm font-bold border border-slate-700 shadow-inner">{tzAbbr}</span>
+                                        <span className="bg-navy-950/90 backdrop-blur text-slate-200 px-4 py-2 rounded-lg text-sm font-bold border border-slate-700 shadow-inner">{offsetString}</span>
+                                        <span className={`px-4 py-2 rounded-lg text-sm font-bold border flex items-center gap-2 shadow-inner ${status.bg} ${status.color}`}>
+                                            {status.icon} {status.text}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Center: Massive Clock */}
+                        <div className="flex-[1.5] w-full text-center lg:text-center flex flex-col items-center justify-center">
+                            <div className="text-6xl sm:text-7xl lg:text-9xl font-extrabold text-white tabular-nums tracking-tighter hero-text-3d flex items-baseline justify-center whitespace-nowrap">
+                                {timeString.replace(/(AM|PM)/i, '').trim()}
+                                <span className="text-2xl sm:text-3xl lg:text-5xl text-cyan-400 ml-2 font-bold tracking-normal uppercase">
+                                    {timeString.includes('AM') ? 'AM' : 'PM'}
+                                </span>
+                            </div>
+                            <div className="text-lg lg:text-2xl text-slate-200 font-bold mt-4 text-3d tracking-wide">{dateString}</div>
+                            
+                            <div className="mt-8 inline-flex items-center gap-4 bg-navy-900/80 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform hover:scale-105 cursor-default">
+                                <div className={`p-2.5 rounded-full shadow-inner ${status.bg} ${status.color}`}>{status.icon}</div>
+                                <div className="text-left">
+                                    <div className="text-base font-bold text-white">Good {status.text.toLowerCase()}!</div>
+                                    <div className="text-xs text-slate-300 font-medium">It's {status.text.toLowerCase()} in your location.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right: Globe & Stats */}
+                        <div className="flex-1 w-full flex flex-col items-center lg:items-end text-right hidden lg:flex">
+                            <div className="bg-navy-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 w-64 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+                                <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-700/80">
+                                    <div className="flex items-center gap-2">
+                                        <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>
+                                        <span className="text-xs font-extrabold text-white tracking-wider">LIVE SYNC</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-4 text-left">
+                                    {[
+                                        { label: 'Country', value: location.country, icon: <IconGlobe className="w-4 h-4 text-cyan-500"/> },
+                                        { label: 'City', value: location.city, icon: <IconMapPin className="w-4 h-4 text-cyan-500"/> },
+                                        { label: 'Timezone', value: location.timezone, icon: <IconClock className="w-4 h-4 text-cyan-500"/> },
+                                        { label: 'UTC Offset', value: offsetString, icon: <IconArrowLeftRight className="w-4 h-4 text-cyan-500"/> },
+                                    ].map(stat => (
+                                        <div key={stat.label} className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-cyan-500/10 rounded-md border border-cyan-500/20">{stat.icon}</div>
+                                            <div>
+                                                <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{stat.label}</div>
+                                                <div className="text-sm text-slate-100 font-semibold truncate w-40">{stat.value}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        const ClockCard = ({ city, currentTime, myLocation }) => {
+            const timeString = safeFormat(currentTime, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: city.timezone });
+            const dateString = safeFormat(currentTime, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: city.timezone });
+            
+            const offsetString = safeFormat(currentTime, { timeZoneName: 'shortOffset', timeZone: city.timezone }).split(' ').pop().replace('GMT', 'UTC');
+            const tzAbbr = safeFormat(currentTime, { timeZoneName: 'short', timeZone: city.timezone }).split(' ').pop();
+            
+            const localHour = getLocalHour(currentTime, city.timezone);
+            const status = getTimeOfDayStatus(localHour);
+            const diff = getTimeDifference(currentTime, myLocation.timezone, city.timezone);
+
+            return (
+                <div className={`relative rounded-2xl overflow-hidden border border-slate-700/60 card-3d group flex flex-col min-h-[170px]`}>
+                    {/* Dynamic Image Background */}
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110" 
+                        style={{ backgroundImage: `url(${city.image})` }}
+                    ></div>
+                    
+                    {/* Dark Premium Overlays */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#030816] via-[#030816]/80 to-[#030816]/40 transition-colors duration-500 group-hover:via-[#030816]/60"></div>
+                    <div className={`absolute inset-0 opacity-30 mix-blend-color-burn ${status.gradient}`}></div>
+                    
+                    <div className="relative z-10 p-5 flex flex-col h-full">
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="text-3xl drop-shadow-lg filter">{city.flag}</div>
+                                <div>
+                                    <h3 className="font-extrabold text-white text-base leading-tight text-3d">{city.country}</h3>
+                                    <p className="text-xs text-slate-200 font-semibold text-3d">{city.city}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Time */}
+                        <div className="mt-auto mb-4">
+                            <div className="text-3xl font-extrabold text-white tabular-nums tracking-tight text-3d">
+                                {timeString.replace(/(AM|PM)/i, '').trim()}
+                                <span className="text-sm text-cyan-300 ml-1 font-bold">{timeString.includes('AM') ? 'AM' : 'PM'}</span>
+                            </div>
+                            <div className="text-xs text-slate-200 font-bold mt-1 text-3d tracking-wide">{dateString}</div>
+                            
+                            <div className="flex flex-wrap items-center gap-2 mt-3">
+                                <span className="text-[10px] font-bold bg-navy-950/90 px-2.5 py-1 rounded-md text-slate-200 border border-slate-700 shadow-inner">{tzAbbr}</span>
+                                <span className="text-[10px] font-bold bg-navy-950/90 px-2.5 py-1 rounded-md text-slate-200 border border-slate-700 shadow-inner">{offsetString}</span>
+                            </div>
+                        </div>
+
+                        {/* Footer Status */}
+                        <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                            <div className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wide flex items-center gap-1.5 border backdrop-blur-xl shadow-inner ${status.bg} ${status.color}`}>
+                                {status.icon} {status.text}
+                            </div>
+                            {diff.value !== 0 && (
+                                <div className={`text-[10px] font-bold px-2 py-1 rounded-md bg-navy-950/80 border border-slate-700 shadow-inner ${diff.isAhead ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {diff.text}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             );
         };
 
-        const TopNav = () => (
-            <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-[#020817]/90 backdrop-blur-md border-b border-slate-800">
-                <div className="flex items-center gap-3 cursor-pointer">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                        <IconGlobe className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-white tracking-tight leading-none">WorldClock</h1>
-                        <p className="text-[11px] text-cyan-400 font-medium uppercase tracking-wider mt-1">Live Global Time</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium hidden sm:block">Live Sync Active</span>
-                </div>
-            </nav>
-        );
-
-        const LocalHero = ({ location, currentTime }) => {
-            const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: location.timezone };
-            const timeString = safeFormat(currentTime, timeOpts);
+        const ToolsSection = ({ myLocation, currentTime }) => {
+            const [selectedCityId, setSelectedCityId] = useState(CITIES.find(c => c.id === 'gb_lon')?.id || CITIES[1].id);
+            const targetCity = CITIES.find(c => c.id === selectedCityId);
             
-            const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: location.timezone };
-            const dateString = safeFormat(currentTime, dateOpts);
-            
-            const tzOpts = { timeZoneName: 'shortOffset', timeZone: location.timezone };
-            const offsetString = safeFormat(currentTime, tzOpts).split(' ').pop().replace('GMT', 'UTC');
-            
-            const tzNameOpts = { timeZoneName: 'short', timeZone: location.timezone };
-            const tzAbbrParts = safeFormat(currentTime, tzNameOpts).split(' ');
-            const tzAbbr = tzAbbrParts.length > 1 ? tzAbbrParts.pop() : offsetString;
-            
-            const localHour = getLocalHour(currentTime, location.timezone);
-            
-            let statusText = 'Day';
-            let StatusIcon = IconSun;
-            if (localHour >= 5 && localHour < 12) { statusText = 'Morning'; StatusIcon = IconSun; }
-            else if (localHour >= 12 && localHour < 17) { statusText = 'Afternoon'; StatusIcon = IconSun; }
-            else if (localHour >= 17 && localHour < 21) { statusText = 'Evening'; StatusIcon = IconMoon; }
-            else { statusText = 'Night'; StatusIcon = IconMoon; }
+            const diff = getTimeDifference(currentTime, myLocation.timezone, targetCity.timezone);
+            const myTime = safeFormat(currentTime, { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: myLocation.timezone });
+            const theirTime = safeFormat(currentTime, { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: targetCity.timezone });
 
             return (
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 mb-8 shadow-2xl shadow-black/50">
-                    <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" 
-                         style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, rgba(6, 182, 212, 0.4) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.2) 0%, transparent 40%)' }}>
-                    </div>
-                    <div className="absolute right-0 top-0 bottom-0 w-2/3 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] [mask-image:linear-gradient(to_left,white,transparent)]"></div>
-                    
-                    <div className="relative z-10 p-8 lg:p-12 flex flex-col md:flex-row justify-between items-center gap-8">
-                        <div className="flex flex-col items-start gap-5 flex-1 w-full">
-                            <div className="flex items-center gap-2 bg-cyan-500/10 text-cyan-400 px-4 py-1.5 rounded-full text-xs font-semibold border border-cyan-500/20 backdrop-blur-sm shadow-inner tracking-wide uppercase">
-                                <IconMapPin className="w-3.5 h-3.5" /> Your Local Time
+                <div id="time-difference" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12 mb-20">
+                    {/* Time Difference Calculator */}
+                    <div className="glass-card rounded-2xl p-6 border border-slate-700/50">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-blue-500/20 rounded-lg"><IconClock className="w-5 h-5 text-blue-400"/></div>
+                            <h2 className="text-xl font-bold text-white">Time Difference Calculator</h2>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+                            <div className="flex-1 w-full bg-navy-950 border border-slate-800 rounded-xl p-3">
+                                <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">From Location</div>
+                                <div className="text-sm text-white font-medium flex items-center gap-2"><IconMapPin className="w-4 h-4 text-cyan-400"/> {myLocation.country} - {myLocation.city}</div>
                             </div>
-                            <div className="flex items-center gap-6 w-full">
-                                <div className="text-6xl lg:text-7xl drop-shadow-lg filter bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50">{location.flag}</div>
-                                <div>
-                                    <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight drop-shadow-md">{location.country}</h2>
-                                    <p className="text-xl text-slate-400 font-medium mt-2">{location.city} <span className="text-slate-600">•</span> <span className="text-sm">{location.timezone}</span></p>
-                                </div>
+                            <IconArrowLeftRight className="w-6 h-6 text-slate-600 shrink-0" />
+                            <div className="flex-1 w-full bg-navy-950 border border-slate-800 rounded-xl p-3 relative">
+                                <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">To Location</div>
+                                <select 
+                                    value={selectedCityId} 
+                                    onChange={e => setSelectedCityId(e.target.value)}
+                                    className="w-full bg-transparent text-sm text-white font-medium focus:outline-none appearance-none cursor-pointer"
+                                >
+                                    {CITIES.map(c => <option key={c.id} value={c.id} className="bg-navy-900">{c.country} - {c.city}</option>)}
+                                </select>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center md:items-end flex-1 w-full text-center md:text-right">
-                            <div className="text-6xl sm:text-7xl lg:text-8xl font-bold text-white tabular-nums tracking-tighter font-mono drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                                {timeString.replace(/(AM|PM)/i, '').trim()}
-                                <span className="text-2xl lg:text-4xl font-semibold text-slate-400 ml-2 tracking-normal">
-                                    {timeString.includes('AM') ? 'AM' : 'PM'}
-                                </span>
+                        <div className="flex justify-between items-center bg-navy-900/50 rounded-xl p-6 border border-slate-800/50">
+                            <div className="text-center">
+                                <div className="text-xs text-slate-400 mb-1">{myLocation.city}</div>
+                                <div className="text-2xl font-bold text-white">{myTime}</div>
                             </div>
-                            <div className="text-lg lg:text-xl text-slate-300 font-medium mt-3">{dateString}</div>
-                            
-                            <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 mt-6">
-                                <span className="bg-slate-800/80 backdrop-blur text-slate-200 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-700 shadow-inner">{tzAbbr}</span>
-                                <span className="bg-slate-800/80 backdrop-blur text-slate-200 px-4 py-2 rounded-lg text-sm font-semibold border border-slate-700 shadow-inner">{offsetString}</span>
-                                <span className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-500/30 flex items-center gap-2 shadow-inner">
-                                    <StatusIcon className="w-4 h-4" /> {statusText}
-                                </span>
+                            <div className="text-center px-4">
+                                <div className={`text-lg font-bold ${diff.isAhead ? 'text-emerald-400' : 'text-rose-400'}`}>{diff.text}</div>
+                                <div className="text-xs text-slate-500">of {myLocation.city}</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-xs text-slate-400 mb-1">{targetCity.city}</div>
+                                <div className="text-2xl font-bold text-white">{theirTime}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Meeting Time Planner (Simplified visual version) */}
+                    <div className="glass-card rounded-2xl p-6 border border-slate-700/50">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-emerald-500/20 rounded-lg"><IconCalendar className="w-5 h-5 text-emerald-400"/></div>
+                                <h2 className="text-xl font-bold text-white">Meeting Time Planner</h2>
+                            </div>
+                        </div>
+                        
+                        <p className="text-sm text-slate-400 mb-6">Finding overlap between <strong className="text-white">{myLocation.city}</strong> (9 AM - 6 PM) and <strong className="text-white">{targetCity.city}</strong>.</p>
+
+                        <div className="space-y-3">
+                            <div className="bg-navy-950/80 border border-emerald-500/30 rounded-xl p-4 flex items-center justify-between">
+                                <div>
+                                    <div className="text-sm font-bold text-white">01:30 PM - 02:30 PM</div>
+                                    <div className="text-xs text-slate-500">{myLocation.city}</div>
+                                </div>
+                                <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded uppercase border border-emerald-500/30">Good Slot</div>
+                            </div>
+                            <div className="bg-navy-950/80 border border-blue-500/30 rounded-xl p-4 flex items-center justify-between opacity-70">
+                                <div>
+                                    <div className="text-sm font-bold text-white">08:00 AM - 09:00 AM</div>
+                                    <div className="text-xs text-slate-500">{targetCity.city}</div>
+                                </div>
+                                <div className="px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded uppercase border border-blue-500/30">Early</div>
+                            </div>
+                            <div className="w-full text-center mt-4">
+                                <button className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2 px-6 rounded-lg transition-colors w-full sm:w-auto">
+                                    Find All Slots
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -447,87 +563,152 @@
 
         const App = () => {
             const [currentTime, setCurrentTime] = useState(new Date());
-            const [globalSearch, setGlobalSearch] = useState('');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [selectedRegion, setSelectedRegion] = useState('All');
+            const [selectedTimeOfDay, setSelectedTimeOfDay] = useState('All Time');
+            
             const myLocation = useMemo(() => detectUserLocation(), []);
 
-            // The ticking heart of the app: updates exactly every 1 second
+            // Master clock tick (updates every second)
             useEffect(() => {
                 const timer = setInterval(() => setCurrentTime(new Date()), 1000);
                 return () => clearInterval(timer);
             }, []);
 
-            // Filter logic for the massive grid
-            const filteredGlobalCities = useMemo(() => {
-                if (!globalSearch.trim()) return CITIES;
-                const lower = globalSearch.toLowerCase();
-                return CITIES.filter(c => 
-                    c.country.toLowerCase().includes(lower) || 
-                    c.city.toLowerCase().includes(lower) ||
-                    c.timezone.toLowerCase().includes(lower)
-                );
-            }, [globalSearch]);
+            // Filtering logic
+            const filteredCities = useMemo(() => {
+                return CITIES.filter(city => {
+                    // Search
+                    const matchesSearch = city.country.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                          city.city.toLowerCase().includes(searchQuery.toLowerCase());
+                    // Region
+                    const matchesRegion = selectedRegion === 'All' || city.region === selectedRegion;
+                    
+                    // Time of Day Filter
+                    let matchesTime = true;
+                    if (selectedTimeOfDay !== 'All Time') {
+                        const localHour = getLocalHour(currentTime, city.timezone);
+                        const status = getTimeOfDayStatus(localHour);
+                        matchesTime = status.text === selectedTimeOfDay;
+                    }
+
+                    return matchesSearch && matchesRegion && matchesTime;
+                });
+            }, [searchQuery, selectedRegion, selectedTimeOfDay, currentTime]);
 
             return (
-                <div className="min-h-screen bg-[#020817] text-slate-300 font-sans selection:bg-cyan-500/30 flex flex-col">
+                <div className="min-h-screen flex flex-col selection:bg-cyan-500/30">
                     <TopNav />
                     
-                    <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 pt-6">
-                        {/* Auto-detected user location hero block */}
-                        <LocalHero location={myLocation} currentTime={currentTime} />
-                        
-                        {/* Massive Real-Time Global Grid */}
-                        <div className="mt-12 animate-in fade-in duration-500">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-slate-900/40 p-6 rounded-2xl border border-slate-800/60 backdrop-blur-sm">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                                        <IconGlobe className="w-6 h-6 text-blue-500" /> All Countries Live Time
-                                    </h2>
-                                    <p className="text-sm text-slate-400 mt-1">Real-time clock for {CITIES.length} major cities and countries.</p>
+                    <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-8">
+                        <HeroSection location={myLocation} currentTime={currentTime} />
+
+                        <div id="world-clock" className="scroll-mt-24">
+                            {/* Stats & Filters Bar */}
+                            <div className="glass rounded-2xl p-6 mb-8 border border-slate-700/50">
+                                <div className="flex flex-col lg:flex-row justify-between gap-6 mb-6">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                            <IconGlobe className="w-6 h-6 text-blue-500" /> All Countries Live Time
+                                        </h2>
+                                        <p className="text-sm text-slate-400 mt-1">Real-time clock for {CITIES.length} major cities across the globe.</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm font-medium text-slate-300">
+                                        <div className="flex items-center gap-2 bg-navy-950 px-4 py-2 rounded-lg border border-slate-800"><span className="text-red-500 text-lg">🚩</span> {CITIES.length} Locations</div>
+                                        <div className="hidden sm:flex items-center gap-2 bg-navy-950 px-4 py-2 rounded-lg border border-slate-800"><IconMap className="w-4 h-4 text-cyan-400"/> {REGIONS.length - 1} Regions</div>
+                                    </div>
                                 </div>
-                                <div className="relative w-full md:w-96 shadow-inner">
-                                    <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search any country or city..." 
-                                        value={globalSearch}
-                                        onChange={(e) => setGlobalSearch(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 pl-10 pr-10 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600 shadow-inner"
-                                    />
-                                    {globalSearch && (
+
+                                <div className="flex flex-col xl:flex-row gap-4">
+                                    <div className="relative w-full xl:w-80 shrink-0">
+                                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filter by country or city..." 
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full bg-navy-950 border border-slate-700 rounded-xl py-2.5 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
+                                        />
+                                    </div>
+                                    
+                                    <div className="flex-1 overflow-x-auto no-scrollbar pb-2 xl:pb-0">
+                                        <div className="flex gap-2 min-w-max">
+                                            {REGIONS.map(region => (
+                                                <button 
+                                                    key={region}
+                                                    onClick={() => setSelectedRegion(region)}
+                                                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors border ${
+                                                        selectedRegion === region 
+                                                        ? 'bg-blue-600 text-white border-blue-500' 
+                                                        : 'bg-navy-950 text-slate-400 border-slate-800 hover:text-white hover:border-slate-600'
+                                                    }`}
+                                                >
+                                                    {region}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="mt-4 pt-4 border-t border-slate-800 flex overflow-x-auto no-scrollbar gap-2">
+                                    {TIME_FILTERS.map(time => (
                                         <button 
-                                            onClick={() => setGlobalSearch('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                                            key={time}
+                                            onClick={() => setSelectedTimeOfDay(time)}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border flex items-center gap-1.5 ${
+                                                selectedTimeOfDay === time 
+                                                ? 'bg-slate-700 text-white border-slate-500' 
+                                                : 'bg-transparent text-slate-500 border-slate-800 hover:text-slate-300'
+                                            }`}
                                         >
-                                            <IconX className="w-4 h-4" />
+                                            {time}
                                         </button>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
-                            
-                            {filteredGlobalCities.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 pb-12">
-                                    {filteredGlobalCities.map(city => (
-                                        <CompactCountryCard 
+
+                            {/* Clock Grid */}
+                            {filteredCities.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+                                    {/* Always show user location first if no filters are applied */}
+                                    {searchQuery === '' && selectedRegion === 'All' && selectedTimeOfDay === 'All Time' && (
+                                        <ClockCard city={myLocation} currentTime={currentTime} myLocation={myLocation} />
+                                    )}
+                                    
+                                    {filteredCities
+                                        .filter(c => c.id !== myLocation.id) // Prevent duplicate
+                                        .map(city => (
+                                        <ClockCard 
                                             key={city.id} 
-                                            location={city} 
-                                            currentTime={currentTime}
-                                            myLocation={myLocation}
+                                            city={city} 
+                                            currentTime={currentTime} 
+                                            myLocation={myLocation} 
                                         />
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-20 text-slate-500 bg-slate-900/20 rounded-2xl border border-slate-800 border-dashed">
-                                    <IconGlobe className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                    No locations found matching "{globalSearch}". Try another search term.
+                                <div className="text-center py-24 glass-card rounded-2xl border-dashed">
+                                    <IconGlobe className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                                    <h3 className="text-lg font-bold text-white mb-1">No locations found</h3>
+                                    <p className="text-sm text-slate-400">Try adjusting your search or filters.</p>
                                 </div>
                             )}
                         </div>
+
+                        <ToolsSection myLocation={myLocation} currentTime={currentTime} />
                     </main>
 
-                    {/* Simple Footer */}
-                    <footer className="border-t border-slate-800 bg-[#020817] py-6 px-8">
-                        <div className="max-w-[1600px] mx-auto text-center text-xs text-slate-500">
-                            WorldClock Live © {new Date().getFullYear()} • Accurate time zone processing via native Intl API.
+                    {/* Simple Premium Footer */}
+                    <footer className="mt-auto border-t border-white/5 bg-navy-950 py-8 px-6">
+                        <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-500">
+                            <div className="flex items-center gap-2">
+                                <IconGlobe className="w-4 h-4 text-cyan-500" /> WorldClock Live © {new Date().getFullYear()}
+                            </div>
+                            <div className="flex gap-6">
+                                <a href="#" className="hover:text-cyan-400 transition-colors">About</a>
+                                <a href="#" className="hover:text-cyan-400 transition-colors">Privacy</a>
+                                <a href="#" className="hover:text-cyan-400 transition-colors">Time Zone Info</a>
+                            </div>
                         </div>
                     </footer>
                 </div>
